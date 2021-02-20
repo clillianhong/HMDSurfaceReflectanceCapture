@@ -15,7 +15,7 @@ namespace Simulation
         public MLCaptureView[] captures;
 
         public Matrix4x4 simulationToRealityMat;
-        public LightField(LightFieldJsonData data, float radius, Vector3 newFocalPoint)
+        public LightField(LightFieldJsonData data, float radius, Vector3 newFocalPoint, bool loadImages = true)
         {
 
             sessionName = data.sessionName;
@@ -31,27 +31,32 @@ namespace Simulation
                 captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), simulationToRealityMat);
             }
 
-            Debug.Log("successfully loaded light field with " + captures[0].simulationCapturePosition + " capture position");
+            Debug.Log("successfully loaded light field with " + captures.Length + " captures");
 
         }
 
         public Matrix4x4 ConstructSRMat(float simRadius, float realRadius, Vector3 S, Vector3 R)
         {
             Matrix4x4 T_SR = new Matrix4x4(
-                new Vector4(1, 0, 0, R.x - S.x),
-                 new Vector4(0, 1, 0, R.y - S.y),
-                  new Vector4(0, 0, 1, R.z - S.z),
-                   new Vector4(0, 0, 0, 1)
+                new Vector4(1, 0, 0, 0),
+                 new Vector4(0, 1, 0, 0),
+                  new Vector4(0, 0, 1, 0),
+                   new Vector4(R.x - S.x, R.y - S.y, R.z - S.z, 1)
             );
 
             Matrix4x4 T_Sfoc = new Matrix4x4(
-                new Vector4(1, 0, 0, S.x),
-                 new Vector4(0, 1, 0, S.y),
-                  new Vector4(0, 0, 1, S.z),
-                   new Vector4(0, 0, 0, 1)
+                new Vector4(1, 0, 0, 0),
+                 new Vector4(0, 1, 0, 0),
+                  new Vector4(0, 0, 1, 0),
+                   new Vector4(-R.x, -R.y, -R.z, 1)
             );
 
-            Matrix4x4 T_Sfoc_inv = T_Sfoc.inverse;
+            Matrix4x4 T_Sfoc_inv = new Matrix4x4(
+                new Vector4(1, 0, 0, 0),
+                 new Vector4(0, 1, 0, 0),
+                  new Vector4(0, 0, 1, 0),
+                   new Vector4(R.x, R.y, R.z, 1)
+            );
 
             Matrix4x4 S_SR = new Matrix4x4(
                 new Vector4(realRadius / simRadius, 0, 0, 0),
@@ -60,7 +65,7 @@ namespace Simulation
                    new Vector4(0, 0, 0, 1)
             );
 
-            return T_SR * T_Sfoc_inv * S_SR * T_Sfoc;
+            return T_Sfoc_inv * S_SR * T_Sfoc * T_SR;
 
         }
     }
