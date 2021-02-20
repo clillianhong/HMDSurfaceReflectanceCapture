@@ -14,7 +14,23 @@ namespace Simulation
         public float simSphereRadius;
         public MLCaptureView[] captures;
 
+        //transform from sim to real 
         public Matrix4x4 simulationToRealityMat;
+
+        //translate from sim to real origin 
+
+        //translate to the real origin
+        public Matrix4x4 transOriginRMat;
+        public Matrix4x4 transToOriginRMat;
+
+        //translate back from the real origin
+        public Matrix4x4 transToOriginRMatInv;
+
+        //scale from sim to real 
+        public Matrix4x4 scaleMat;
+
+        public float realRadius;
+        public Vector3 realFocalPoint;
         public LightField(LightFieldJsonData data, float radius, Vector3 newFocalPoint, bool loadImages = true)
         {
 
@@ -22,51 +38,61 @@ namespace Simulation
             simFocalPoint = data.focalPoint;
             simSphereRadius = data.sphereRadius;
             captures = new MLCaptureView[data.captures.Length];
-            simulationToRealityMat = ConstructSRMat(simSphereRadius, radius, simFocalPoint, newFocalPoint);
+            SetMatrices(simSphereRadius, radius, simFocalPoint, newFocalPoint);
+            realRadius = radius;
+            realFocalPoint = newFocalPoint;
 
             for (int x = 0; x < captures.Length; x++)
             {
                 CaptureJSONData captureData = data.captures[x];
                 string pngPath = Loader.PathFromSessionName(data.sessionName) + "CaptureImages/" + captureData.imageFileName;
-                captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), simulationToRealityMat);
+                captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), TransformSimToReal(captureData.transform.position));
             }
 
             Debug.Log("successfully loaded light field with " + captures.Length + " captures");
 
         }
 
-        public Matrix4x4 ConstructSRMat(float simRadius, float realRadius, Vector3 S, Vector3 R)
+        public void SetMatrices(float simRadius, float realRadius, Vector3 S, Vector3 R)
         {
-            Matrix4x4 T_SR = new Matrix4x4(
-                new Vector4(1, 0, 0, 0),
-                 new Vector4(0, 1, 0, 0),
-                  new Vector4(0, 0, 1, 0),
-                   new Vector4(R.x - S.x, R.y - S.y, R.z - S.z, 1)
+            transOriginRMat = new Matrix4x4(
+                new Vector4(1f, 0, 0, 0),
+                 new Vector4(0, 1f, 0, 0),
+                  new Vector4(0, 0, 1f, 0),
+                   new Vector4(R.x - S.x, R.y - S.y, R.z - S.z, 1f)
             );
 
-            Matrix4x4 T_Sfoc = new Matrix4x4(
-                new Vector4(1, 0, 0, 0),
-                 new Vector4(0, 1, 0, 0),
-                  new Vector4(0, 0, 1, 0),
-                   new Vector4(-R.x, -R.y, -R.z, 1)
+            transToOriginRMat = new Matrix4x4(
+                new Vector4(1f, 0, 0, 0),
+                 new Vector4(0, 1f, 0, 0),
+                  new Vector4(0, 0, 1f, 0),
+                   new Vector4(-R.x, -R.y, -R.z, 1f)
             );
 
-            Matrix4x4 T_Sfoc_inv = new Matrix4x4(
-                new Vector4(1, 0, 0, 0),
-                 new Vector4(0, 1, 0, 0),
-                  new Vector4(0, 0, 1, 0),
-                   new Vector4(R.x, R.y, R.z, 1)
+            float scaleRatio = realRadius / simRadius;
+
+            scaleMat = new Matrix4x4(
+               new Vector4(scaleRatio, 0, 0, 0),
+                new Vector4(0, scaleRatio, 0, 0),
+                 new Vector4(0, 0, scaleRatio, 0),
+                  new Vector4(0, 0, 0, 1f)
+           );
+
+            transToOriginRMatInv = new Matrix4x4(
+                new Vector4(1f, 0, 0, 0),
+                 new Vector4(0, 1f, 0, 0),
+                  new Vector4(0, 0, 1f, 0),
+                   new Vector4(R.x, R.y, R.z, 1f)
             );
 
-            Matrix4x4 S_SR = new Matrix4x4(
-                new Vector4(realRadius / simRadius, 0, 0, 0),
-                 new Vector4(0, realRadius / simRadius, 0, 0),
-                  new Vector4(0, 0, realRadius / simRadius, 0),
-                   new Vector4(0, 0, 0, 1)
-            );
+            simulationToRealityMat = transToOriginRMatInv * scaleMat * transToOriginRMat * transOriginRMat;
 
-            return T_Sfoc_inv * S_SR * T_Sfoc * T_SR;
+        }
 
+        // [TransformSimToReal] is the scaled position of simulation vector [S]
+        public Vector3 TransformSimToReal(Vector3 S)
+        {
+            return OP.MultPoint(this.simulationToRealityMat, S);
         }
     }
 
@@ -126,7 +152,7 @@ namespace Simulation
         public TransformJSONData transformData;
 
         //initialize with json data object
-        public MLCaptureView(CaptureJSONData jSONData, Texture2D tex, Matrix4x4 simToRealityMat)
+        public MLCaptureView(CaptureJSONData jSONData, Texture2D tex, Vector3 realityPosition)
         {
             id = jSONData.imageFileName;
             texture = tex;
@@ -135,9 +161,11 @@ namespace Simulation
 
             texture = tex;
             simulationCapturePosition = jSONData.transform.position;
-            realityCapturePosition = simToRealityMat * simulationCapturePosition;
+            realityCapturePosition = realityPosition;
 
         }
+
+
 
     }
 
