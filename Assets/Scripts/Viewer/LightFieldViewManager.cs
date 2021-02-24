@@ -22,6 +22,7 @@ namespace Simulation.Viewer
 
         public string lightFieldName;
         public GameObject projectorPlanePrefab;
+        public GameObject imagePreviewPrefab;
 
 
         public GameObject focalPoint
@@ -44,6 +45,8 @@ namespace Simulation.Viewer
 
         private MLInput.Controller _controller;
         private LFManagerState _currentState;
+
+        private GameObject[] captureViewObjs;
 
         private Camera _camera;
         #endregion
@@ -101,7 +104,13 @@ namespace Simulation.Viewer
                         //load light field with transformations
                         string jsonPath = Loader.PathFromSessionName(lightFieldName) + "/capture.json";
                         _lightField = new LightField(JsonUtility.FromJson<LightFieldJsonData>(Simulation.Utils.Loader.LoadJsonText(jsonPath)), radius, focalPoint.transform.position);
+                        captureViewObjs = new GameObject[_lightField.captures.Length];
+                        for (int i = 0; i < _lightField.captures.Length; i++)
+                        {
+                            MLCaptureView captureView = _lightField.captures[i];
+                            captureViewObjs[i] = createCapturePreviewObject(captureView);
 
+                        }
                         transitionState(LFManagerState.ACTIVE);
 
                         break;
@@ -109,6 +118,16 @@ namespace Simulation.Viewer
                 }
 
             }
+        }
+
+        GameObject createCapturePreviewObject(MLCaptureView captureView)
+        {
+            GameObject obj = GameObject.Instantiate(imagePreviewPrefab, captureView.realityCapturePosition, Quaternion.identity);
+            Vector3 innerVec = (focalPoint.transform.position - obj.transform.position).normalized;
+            obj.transform.up = -innerVec;
+            obj.GetComponent<MeshRenderer>().material.mainTexture = captureView.texture;
+
+            return obj;
         }
 
         void OnButtonUp(byte controllerId, MLInput.Controller.Button button)
@@ -141,6 +160,35 @@ namespace Simulation.Viewer
             {
                 _projectorPlane.transform.up = -_camera.transform.forward;
             }
+            if (this.captureViewObjs != null)
+            {
+                MLCaptureView capture = this.FindNearestCapture(1, _camera.transform.position);
+                capture.texture.wrapMode = TextureWrapMode.Clamp;
+
+                _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetMatrix("projectM", _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetTexture("_ProjTex", capture.texture);
+            }
+
+        }
+
+        public MLCaptureView FindNearestCapture(int k, Vector3 position)
+        {
+
+            MLCaptureView leastView = new MLCaptureView();
+            float minDist = float.PositiveInfinity;
+
+            foreach (MLCaptureView view in _lightField.captures)
+            {
+                float curDist = Vector3.Distance(position, view.realityCapturePosition);
+
+                if (minDist > curDist)
+                {
+                    minDist = curDist;
+                    leastView = view;
+                }
+            }
+
+            return leastView;
         }
 
         void OnDestroy()

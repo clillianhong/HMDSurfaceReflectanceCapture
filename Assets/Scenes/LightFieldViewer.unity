@@ -1172,7 +1172,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1266123204
 Transform:
   m_ObjectHideFlags: 0
@@ -1324,6 +1324,8 @@ MonoBehaviour:
     type: 3}
   lightFieldName: session1
   projectorPlanePrefab: {fileID: 5599862325618540427, guid: 43aa536bf5e178a4f83781ac4a0ad540,
+    type: 3}
+  imagePreviewPrefab: {fileID: 6769434067675507821, guid: a25d92b2ec46b5d469795d28d65b9a43,
     type: 3}
 --- !u!4 &1817536482
 Transform:
