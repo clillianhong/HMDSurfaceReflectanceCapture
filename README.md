@@ -1,7 +1,9 @@
 # Head-Mounted AR Surface Reflectance Capture on Magic Leap w/ Unity 
 
-## Project
-
+## Lightfield View
+![](https://github.com/clillianhong/SurfaceReflectanceCapture/blob/main/Assets/_media_/lightfield_full.jpg)
+![](https://github.com/clillianhong/SurfaceReflectanceCapture/blob/main/Assets/_media_/lightfield_previews.jpg)
+![](https://github.com/clillianhong/SurfaceReflectanceCapture/blob/main/Assets/_media_/lightfield_blank.jpg)
 
 ## Versions
 
