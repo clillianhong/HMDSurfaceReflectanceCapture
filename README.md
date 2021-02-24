@@ -1,6 +1,7 @@
 # Head-Mounted AR Surface Reflectance Capture on Magic Leap w/ Unity 
 
-## Lightfield View
+## Lightfield Viewer 
+Rendering a collection from a light field capture system simulator build in Unity3d. 
 ![](https://github.com/clillianhong/SurfaceReflectanceCapture/blob/main/Assets/_media_/lightfield.jpg)
 
 ## Versions
