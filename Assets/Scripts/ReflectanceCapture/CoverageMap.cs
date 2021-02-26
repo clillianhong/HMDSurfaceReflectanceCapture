@@ -31,11 +31,11 @@ namespace CaptureSystem
         }
 
 
-        Texture2D generateCoverageMapTexture()
-        {
+        // Texture2D generateCoverageMapTexture()
+        // {
 
-
-        }
+                
+        // }
 
     }
 

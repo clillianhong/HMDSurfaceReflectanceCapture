@@ -2,24 +2,35 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Capture : MonoBehaviour
+
+namespace CaptureSystem
 {
-
-    public string captureID;
-    // Start is called before the first frame update
-
-    public Capture(string ID)
-    {
-        captureID = ID;
-    }
-    void Start()
+    public class Capture : MonoBehaviour
     {
 
-    }
+        public string captureID;
 
-    // Update is called once per frame
-    void Update()
-    {
 
+        public float thetaS; // the angle between the half vector and surface normal 
+
+        public Transform lightPose; //pose of the light at time of capture 
+        public Transform cameraPose; //pose of the camera at time of capture
+
+        // Start is called before the first frame update
+
+        public Capture(string ID)
+        {
+            captureID = ID;
+        }
+        void Start()
+        {
+
+        }
+
+        // Update is called once per frame
+        void Update()
+        {
+
+        }
     }
 }

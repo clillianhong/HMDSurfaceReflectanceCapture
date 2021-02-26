@@ -16,7 +16,8 @@ namespace CaptureSystem
         public int beta2;
 
         // Maps real world position to its sample data 
-        public Dictionary<Vector3, PointSampleData> samples;
+
+        public Dictionary<Vector3, SurfacePointData> samples;
 
         //real point positions of the sample ROI 
         public Vector3 bottomLeftPos;
@@ -59,52 +60,6 @@ namespace CaptureSystem
 
 
     }
-
-
-    /// <summary> 
-    /// CMSample represent sample metadata for a single point in the ROI 
-    ///     param: [beta1] is the lower bound angle for the exponential specular component 
-    ///     param: [beta2] is the upper bound angle for the exponential specular component 
-    ///     param: [worldPosition] is the world position of the PointSampleData (somewhere within the ROI)
-    ///     param: [sampleCaptures] is a dictionary mapping the color channel to a CapturePoint that fulfills the inequality for that channel
-    /// The channels are set as follows: 
-    /// Channel.RED -> capture theta > b2 
-    /// Channel.BLUE -> capture theta < b1 
-    /// Channel.GREEN -> b1 < capture theta < b2 
-    /// </summary>
-    struct PointSampleData
-    {
-        int beta1;
-        int beta2;
-
-        Vector3 worldPosition;
-
-        Dictionary<string, CapturePoint> sampleCaptures;
-
-        public CMSample(int b1, int b2, Vector3 worldPos)
-        {
-            beta1 = b1;
-            beta2 = b2;
-            sampleCaptures = new Dictionary<string, CapturePoint>();
-            worldPosition = worldPos;
-        }
-
-    }
-
-
-    /// <summary> 
-    /// Stores the location of a specific sample point in an image
-    ///     param: [captureID] -> the ID of the capture
-    ///     param: [x] the x coord of this point in that capture image 
-    ///     param: [y] the y coord of this point in that capture image 
-    /// </summary>
-    struct CapturePoint
-    {
-        string captureID;
-        int x;
-        int y;
-    }
-
 
 
 
