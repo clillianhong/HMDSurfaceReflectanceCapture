@@ -31,8 +31,6 @@ namespace Simulation.Viewer
             set { _focalPoint = value; }
         }
 
-
-
         #region Private Variables
 
         private GameObject _focalPoint;
@@ -63,7 +61,6 @@ namespace Simulation.Viewer
             _controller = MLInput.GetController(MLInput.Hand.Left);
             _currentState = LFManagerState.SETUP_FOCAL;
             Debug.Log("starting");
-
 
             _camera = Camera.main;
             InvokeRepeating("UpdateProjectorPlane", 2.0f, 0.3f);
