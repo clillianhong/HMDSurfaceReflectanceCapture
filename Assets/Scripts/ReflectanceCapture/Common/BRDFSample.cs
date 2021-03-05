@@ -12,8 +12,8 @@ namespace CaptureSystem
     public struct BRDFSample
     {
         float brdf;
-        Vector3 incidentDirection;
-        Vector3 exitantDirection;
+
+        float thetaS;
     }
 
 
