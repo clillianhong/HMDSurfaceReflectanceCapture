@@ -151,9 +151,9 @@ namespace Simulation
             string fieldPath = outputPath + "/" + sessionName;
             string imagePath = fieldPath + "/" + "CaptureImages";
 
-            AssetDatabase.CreateFolder(outputPath, sessionName);
-            AssetDatabase.CreateFolder(fieldPath, "CaptureImages");
-            AssetDatabase.Refresh();
+            // AssetDatabase.CreateFolder(outputPath, sessionName);  NOTE: DISABLED FOR BUILD
+            // AssetDatabase.CreateFolder(fieldPath, "CaptureImages");
+            // AssetDatabase.Refresh();
 
             CaptureJSONData[] captures = new CaptureJSONData[collectionManager.captureViews.Count];
 
