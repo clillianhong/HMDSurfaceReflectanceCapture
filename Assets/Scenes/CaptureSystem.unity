@@ -847,7 +847,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a315433764645c4c83a38fc4f616f4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _previewObject: {fileID: 499891068}
 --- !u!1 &946596069
 GameObject:
   m_ObjectHideFlags: 0
@@ -1246,6 +1245,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   captureViewThumbnailPrefab: {fileID: 6769434067675507821, guid: a25d92b2ec46b5d469795d28d65b9a43,
     type: 3}
+  _closestObject: {fileID: 499891068}
 --- !u!1 &1504691924
 GameObject:
   m_ObjectHideFlags: 0

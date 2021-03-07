@@ -41,8 +41,6 @@ namespace CaptureSystem
         private bool _hasStarted = false;
 
 
-        [SerializeField, Tooltip("Object to set new images on.")]
-        private GameObject _previewObject = null;
 
 
         private Thread _captureThread = null;
@@ -64,15 +62,7 @@ namespace CaptureSystem
             captureViewController = GameObject.Find("CaptureViewController").GetComponent<CaptureViewController>();
             controller = GameObject.Find("Controller");
 
-            if (_previewObject == null)
-            {
-                Debug.LogError("Error: CameraController._previewObject is not set, disabling script.");
-                enabled = false;
-                return;
-            }
 
-            // This is made active when we have a captured image to show.
-            _previewObject.SetActive(false);
 
 
         }
@@ -233,15 +223,11 @@ namespace CaptureSystem
 
             if (status && (texture.width != 8 && texture.height != 8))
             {
-                _previewObject.SetActive(true);
-                Renderer renderer = _previewObject.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    renderer.material.mainTexture = texture;
-                }
+
+                captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position);
             }
 
-            captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position);
+
 
         }
 

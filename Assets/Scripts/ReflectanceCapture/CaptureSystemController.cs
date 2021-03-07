@@ -60,11 +60,15 @@ namespace CaptureSystem
             if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.Bumper == button && !cameraController.isCapturing)
             {
                 cameraController.TriggerAsyncCapture();
+                _statusText.text = "New capture!";
                 captureViewController.collection.GenerateKDTree();
             }
             else if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.HomeTap == button)
             {
-                captureViewController.NearestNeighbor(Camera.main.transform.position);
+
+                var nearestCapture = captureViewController.NearestNeighbor(Camera.main.transform.position);
+                _statusText.text = "Nearest neighbor is capture " + nearestCapture.captureID;
+                userInterfaceController.UpdateClosestPreview(nearestCapture);
             }
         }
 
@@ -90,7 +94,7 @@ namespace CaptureSystem
         /// </summary>
         private void Update()
         {
-            UpdateStatusText();
+            // UpdateStatusText();
         }
 
         /// <summary>
@@ -98,10 +102,11 @@ namespace CaptureSystem
         /// </summary>
         private void UpdateStatusText()
         {
-            _statusText.text = string.Format("<color=#dbfb76><b>{0}</b></color>\n{1}: {2}\n",
-                LocalizeManager.GetString("ControllerData"),
-                LocalizeManager.GetString("Status"),
-                LocalizeManager.GetString(ControllerStatus.Text));
+            _statusText.text = "THIS IS THE STATUS";
+            // _statusText.text = string.Format("<color=#dbfb76><b>{0}</b></color>\n{1}: {2}\n",
+            //     LocalizeManager.GetString("ControllerData"),
+            //     LocalizeManager.GetString("Status"),
+            //     LocalizeManager.GetString(ControllerStatus.Text));
         }
 
         /// <summary>
