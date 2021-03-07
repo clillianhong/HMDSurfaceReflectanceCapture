@@ -21,6 +21,7 @@ namespace CaptureSystem
         void Awake()
         {
             _collection = new CaptureViewCollection();
+
         }
         // Start is called before the first frame update
         void Start()
@@ -41,11 +42,30 @@ namespace CaptureSystem
         {
             float thetaS = 0; //TODO: ACTUALLY CALCULATE THETA S 
 
+            Transform newTransform = camTransform;
+
             Capture newCapture = new Capture("" + nextIDNum, texture, thetaS, camTransform, lightPos);
             nextIDNum++;
             _collection.captures.Add(newCapture);
-            Debug.Log("Capture added to collection");
+            Debug.Log("Capture added to collection with ID " + newCapture.captureID);
             OnCaptureCreated?.Invoke();
+        }
+
+        public Capture NearestNeighbor(Vector3 position)
+        {
+            double[] testpt = { position.x, position.y, position.z };
+            Debug.Log("Looking for nearest neighbor to: (" + testpt[0] + ", " + testpt[1] + ", " + testpt[2] + ")");
+
+
+            if (_collection.kdTree != null)
+            {
+                var knearest = _collection.kdTree.NearestNeighbors(point: testpt, neighbors: 1);
+                var nearest = knearest[0];
+                Debug.Log("Nearest neighbor found at: (" + nearest.Item1[0] + ", " + nearest.Item1[1] + ", " + nearest.Item1[2] + ") with CAPTURE ID" + nearest.Item2.captureID);
+                return nearest.Item2;
+            }
+            return null;
+
         }
     }
 

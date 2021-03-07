@@ -60,6 +60,11 @@ namespace CaptureSystem
             if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.Bumper == button && !cameraController.isCapturing)
             {
                 cameraController.TriggerAsyncCapture();
+                captureViewController.collection.GenerateKDTree();
+            }
+            else if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.HomeTap == button)
+            {
+                captureViewController.NearestNeighbor(Camera.main.transform.position);
             }
         }
 
@@ -189,33 +194,7 @@ namespace CaptureSystem
 #endif
             RequestPermission(MLPrivileges.Id.CameraCapture, "Error: CaptureSystemController failed requesting privileges for camera capture, disabling script. Reason: {0}", DefaultPermissionAction);
             RequestPermission(MLPrivileges.Id.ControllerPose, "Error: CaptureSystemController failed requesting privileges for controller pose, disabling script. Reason: {0}", HandlePrivilegesDone);
-            // RequestPermission(MLPrivileges.Id.FineLocation, "Error: CaptureSystemController failed requesting privileges for fine location, disabling script. Reason: {0}", HandlePrivilegesDone);
-
             Debug.Log("Succeeded in requesting all privileges");
-
-            //             result = MLPrivilegesStarterKit.RequestPrivilegesAsync(HandlePrivilegesDone, MLPrivileges.Id.CameraCapture);
-            // #if PLATFORM_LUMIN
-            //             if (!result.IsOk)
-            //             {
-            //                 Debug.LogErrorFormat("Error: CaptureSystemController failed requesting privileges for camera capture, disabling script. Reason: {0}", result);
-            //                 MLPrivilegesStarterKit.Stop();
-            //                 enabled = false;
-            //                 return;
-            //             }
-
-            // #endif
-
-            //             result = MLPrivilegesStarterKit.RequestPrivilegesAsync(HandlePrivilegesDone, MLPrivileges.Id.ControllerPose);
-            // #if PLATFORM_LUMIN
-            //             if (!result.IsOk)
-            //             {
-            //                 Debug.LogErrorFormat("Error: CaptureSystemController failed requesting privileges, disabling script. Reason: {0}", result);
-            //                 MLPrivilegesStarterKit.Stop();
-            //                 enabled = false;
-            //                 return;
-            //             }
-
-            // #endif
 
             _privilegesBeingRequested = true;
 

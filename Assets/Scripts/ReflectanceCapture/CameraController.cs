@@ -20,7 +20,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using MagicLeap.Core.StarterKit;
 using MagicLeap;
-
 namespace CaptureSystem
 {
 

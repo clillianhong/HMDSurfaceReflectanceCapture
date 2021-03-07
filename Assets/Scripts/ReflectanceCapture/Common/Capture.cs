@@ -15,7 +15,7 @@ namespace CaptureSystem
         public float thetaS; // the angle between the half vector and surface normal 
 
         public Vector3 pointLightPosition; //pose of the light at time of capture 
-        public Transform cameraPose; //pose of the camera at time of capture
+        public TransformData cameraPose; //pose of the camera at time of capture
 
         // Start is called before the first frame update
 
@@ -24,9 +24,26 @@ namespace CaptureSystem
             captureID = ID;
             texture = tex;
             thetaS = theS;
-            cameraPose = camTrans;
+            cameraPose = new TransformData();
+            cameraPose.forward = camTrans.forward;
+            cameraPose.up = camTrans.up;
+            cameraPose.position = camTrans.position;
+            cameraPose.right = camTrans.right;
+            cameraPose.rotation = camTrans.rotation;
+
             pointLightPosition = lightPos;
         }
 
+    }
+
+    [System.Serializable]
+    public class TransformData
+    {
+        public Vector3 forward;
+        public Vector3 up;
+        public Vector3 right;
+        public Vector3 position;
+
+        public Quaternion rotation;
     }
 }
