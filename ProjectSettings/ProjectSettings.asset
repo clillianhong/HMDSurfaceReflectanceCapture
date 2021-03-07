@@ -120,7 +120,8 @@ PlayerSettings:
     16:9: 1
     Others: 1
   bundleVersion: v0.24.0.1
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: -6602195166426926598, guid: 2ba4dbd235ed941bb8fdb5a40ab00f22, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -693,7 +694,7 @@ PlayerSettings:
     m_ModelFolderPath: 
     m_PortalFolderPath: 
   luminCert:
-    m_CertPath: 
+    m_CertPath: C:/Users/clill/OneDrive/Documents/School/Research/privatekey/lillian2021.cert
     m_SignPackage: 1
   luminIsChannelApp: 0
   luminVersion:
