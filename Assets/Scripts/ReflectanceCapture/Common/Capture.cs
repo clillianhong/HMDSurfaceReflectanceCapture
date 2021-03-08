@@ -5,32 +5,28 @@ using UnityEngine;
 
 namespace CaptureSystem
 {
-    public class Capture : MonoBehaviour
+    public class Capture
     {
 
         public string captureID;
 
+        public Texture2D texture;
 
         public float thetaS; // the angle between the half vector and surface normal 
 
-        public Transform lightPose; //pose of the light at time of capture 
+        public Vector3 pointLightPosition; //pose of the light at time of capture 
         public Transform cameraPose; //pose of the camera at time of capture
 
         // Start is called before the first frame update
 
-        public Capture(string ID)
+        public Capture(string ID, Texture2D tex, float theS, Transform camTrans, Vector3 lightPos)
         {
             captureID = ID;
+            texture = tex;
+            thetaS = theS;
+            cameraPose = camTrans;
+            pointLightPosition = lightPos;
         }
-        void Start()
-        {
 
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
-        }
     }
 }

@@ -27,6 +27,9 @@ namespace CaptureSystem
     public class CameraController : MonoBehaviour
     {
 
+
+        private CaptureViewController captureViewController;
+        private GameObject controller;
         private bool _isCameraConnected = false;
 
         private bool _isCapturing = false;
@@ -58,6 +61,9 @@ namespace CaptureSystem
         /// </summary>
         void Awake()
         {
+
+            captureViewController = GameObject.Find("CaptureViewController").GetComponent<CaptureViewController>();
+            controller = GameObject.Find("Controller");
 
             if (_previewObject == null)
             {
@@ -236,8 +242,7 @@ namespace CaptureSystem
                 }
             }
 
-
-
+            captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position);
 
         }
 

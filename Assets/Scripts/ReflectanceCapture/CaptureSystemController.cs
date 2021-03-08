@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
@@ -19,7 +20,7 @@ namespace CaptureSystem
 
         public CaptureViewController captureViewController;
 
-        private UserInterface userInterface;
+        private UserInterfaceController userInterfaceController;
 
 
         /////// CAMERA UI CODE ////////////////////
@@ -31,7 +32,6 @@ namespace CaptureSystem
         [SerializeField, Tooltip("The text used to display status information for the example.")]
         private Text _statusText = null;
 
-
         private bool _privilegesBeingRequested = false;
 
         /////// CAMERA UI CODE END ////////////////
@@ -40,8 +40,10 @@ namespace CaptureSystem
         void Awake()
         {
 
-            // cameraController = GameObject.Find("CameraController").GetComponent<CameraController>();
-            // captureViewController = GameObject.Find("CaptureViewController").GetComponent<CaptureViewController>();
+            cameraController = GameObject.Find("CameraController").GetComponent<CameraController>();
+            captureViewController = GameObject.Find("CaptureViewController").GetComponent<CaptureViewController>();
+            captureViewController.OnCaptureCreated += OnCaptureCreated;
+            userInterfaceController = GameObject.Find("UserInterfaceController").GetComponent<UserInterfaceController>();
             CheckObjectsSet();
             CheckPermissions();
 
@@ -58,9 +60,19 @@ namespace CaptureSystem
             if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.Bumper == button && !cameraController.isCapturing)
             {
                 cameraController.TriggerAsyncCapture();
-                _statusText.text = "Async capture triggered!";
-                // Debug.Log("Async capture triggered!");
             }
+        }
+
+        private void OnCaptureCreated()
+        {
+            //generate UI capture thumbnail 
+            Capture newCapture = captureViewController.collection.captures?.ElementAt(captureViewController.collection.captures.Count - 1);
+            GameObject previewObj = userInterfaceController.CreateCapturePreviewObject(newCapture);
+            if (previewObj != null)
+            {
+                Debug.Log("preview object made at location " + previewObj.transform.position);
+            }
+
         }
 
         void Start()
@@ -73,7 +85,7 @@ namespace CaptureSystem
         /// </summary>
         private void Update()
         {
-            // UpdateStatusText();
+            UpdateStatusText();
         }
 
         /// <summary>
@@ -106,7 +118,7 @@ namespace CaptureSystem
         void OnDisable()
         {
 #if PLATFORM_LUMIN
-            MLInput.OnControllerButtonDown -= OnButtonDown;
+            UnregisterCallbacks();
 #endif
         }
 
@@ -116,9 +128,15 @@ namespace CaptureSystem
             {
 
 #if PLATFORM_LUMIN
-                MLInput.OnControllerButtonDown -= OnButtonDown;
+                UnregisterCallbacks();
 #endif
             }
+        }
+
+        void UnregisterCallbacks()
+        {
+            captureViewController.OnCaptureCreated -= OnCaptureCreated;
+            MLInput.OnControllerButtonDown -= OnButtonDown;
         }
 
 
@@ -169,21 +187,53 @@ namespace CaptureSystem
                 return;
             }
 #endif
+            RequestPermission(MLPrivileges.Id.CameraCapture, "Error: CaptureSystemController failed requesting privileges for camera capture, disabling script. Reason: {0}", DefaultPermissionAction);
+            RequestPermission(MLPrivileges.Id.ControllerPose, "Error: CaptureSystemController failed requesting privileges for controller pose, disabling script. Reason: {0}", HandlePrivilegesDone);
+            // RequestPermission(MLPrivileges.Id.FineLocation, "Error: CaptureSystemController failed requesting privileges for fine location, disabling script. Reason: {0}", HandlePrivilegesDone);
 
-            result = MLPrivilegesStarterKit.RequestPrivilegesAsync(HandlePrivilegesDone, MLPrivileges.Id.CameraCapture);
+            Debug.Log("Succeeded in requesting all privileges");
+
+            //             result = MLPrivilegesStarterKit.RequestPrivilegesAsync(HandlePrivilegesDone, MLPrivileges.Id.CameraCapture);
+            // #if PLATFORM_LUMIN
+            //             if (!result.IsOk)
+            //             {
+            //                 Debug.LogErrorFormat("Error: CaptureSystemController failed requesting privileges for camera capture, disabling script. Reason: {0}", result);
+            //                 MLPrivilegesStarterKit.Stop();
+            //                 enabled = false;
+            //                 return;
+            //             }
+
+            // #endif
+
+            //             result = MLPrivilegesStarterKit.RequestPrivilegesAsync(HandlePrivilegesDone, MLPrivileges.Id.ControllerPose);
+            // #if PLATFORM_LUMIN
+            //             if (!result.IsOk)
+            //             {
+            //                 Debug.LogErrorFormat("Error: CaptureSystemController failed requesting privileges, disabling script. Reason: {0}", result);
+            //                 MLPrivilegesStarterKit.Stop();
+            //                 enabled = false;
+            //                 return;
+            //             }
+
+            // #endif
+
+            _privilegesBeingRequested = true;
+
+        }
+
+
+        void RequestPermission(MLPrivileges.Id id, string errorMessage, Action<MLResult> action)
+        {
+            MLResult result = MLPrivilegesStarterKit.RequestPrivilegesAsync(action, id);
 #if PLATFORM_LUMIN
             if (!result.IsOk)
             {
-                Debug.LogErrorFormat("Error: CaptureSystemController failed requesting privileges, disabling script. Reason: {0}", result);
+                Debug.LogErrorFormat(errorMessage, result);
                 MLPrivilegesStarterKit.Stop();
                 enabled = false;
                 return;
             }
-
 #endif
-
-            _privilegesBeingRequested = true;
-
         }
 
         /// <summary>
@@ -198,17 +248,25 @@ namespace CaptureSystem
 #if PLATFORM_LUMIN
             if (result != MLResult.Code.PrivilegeGranted)
             {
-                Debug.LogErrorFormat("Error: ImageCaptureExample failed to get requested privileges, disabling script. Reason: {0}", result);
+                Debug.LogErrorFormat("Error: CaptureSystem failed to get requested privileges, disabling script. Reason: {0}", result);
                 enabled = false;
                 return;
             }
 #endif
 
-            Debug.Log("Succeeded in requesting all privileges");
             cameraController.StartCapture(); //TODO: call camera start capture to enable the camera and callbacks
 #if PLATFORM_LUMIN
             MLInput.OnControllerButtonDown += OnButtonDown;
 #endif
+        }
+
+        /// <summary>
+        /// Responds to privilege requester result.
+        /// </summary>
+        /// <param name="result"/>
+        private void DefaultPermissionAction(MLResult result)
+        {
+
         }
 
     }
