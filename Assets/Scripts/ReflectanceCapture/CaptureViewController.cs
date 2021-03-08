@@ -8,10 +8,13 @@ namespace CaptureSystem
     public class CaptureViewController : MonoBehaviour
     {
 
+        // collection of captures 
         private CaptureViewCollection _collection;
 
+        //callback for capture creation event
         public event Action OnCaptureCreated = null;
 
+        //counter for generating capture IDs 
         private int nextIDNum;
         public CaptureViewCollection collection
         {
@@ -38,6 +41,10 @@ namespace CaptureSystem
         /// <summary> 
         /// Creates a capture view object and adds it to the capture collection 
         /// </summary> 
+        /// <param name="texture">The texture containing the image taken.</param>
+        /// <param name="camTransform">The transform of the camera, used to populate the copy transform struct</param>
+        /// <param name="lightPos">The position of the point light source.</param>
+
         public void CreateCaptureView(Texture2D texture, Transform camTransform, Vector3 lightPos)
         {
             float thetaS = 0; //TODO: ACTUALLY CALCULATE THETA S 
@@ -51,6 +58,11 @@ namespace CaptureSystem
             OnCaptureCreated?.Invoke();
         }
 
+
+        /// <summary> 
+        /// Finds the nearest neighbor capture to the point [position]
+        /// </summary> 
+        /// <param name="position">The point of interest for nearest neighbor.</param>
         public Capture NearestNeighbor(Vector3 position)
         {
             double[] testpt = { position.x, position.y, position.z };

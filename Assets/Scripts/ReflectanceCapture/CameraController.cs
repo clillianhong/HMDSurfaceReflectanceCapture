@@ -26,8 +26,9 @@ namespace CaptureSystem
     public class CameraController : MonoBehaviour
     {
 
-
         private CaptureViewController captureViewController;
+
+        //ML remote controller
         private GameObject controller;
         private bool _isCameraConnected = false;
 
@@ -38,10 +39,8 @@ namespace CaptureSystem
             get { return _isCapturing; }
         }
 
+        //whether capture mode has started after getting privileges
         private bool _hasStarted = false;
-
-
-
 
         private Thread _captureThread = null;
 
@@ -53,20 +52,11 @@ namespace CaptureSystem
         /// </summary>
         private object _cameraLockObject = new object();
 
-        /// <summary>
-        /// Using Awake so that Privileges is set before PrivilegeRequester Start.
-        /// </summary>
         void Awake()
         {
-
             captureViewController = GameObject.Find("CaptureViewController").GetComponent<CaptureViewController>();
             controller = GameObject.Find("Controller");
-
-
-
-
         }
-
 
 
         /// <summary>
@@ -205,7 +195,6 @@ namespace CaptureSystem
 
 
 
-
         /// <summary>
         /// Handles the event of a new image getting captured.
         /// </summary>
@@ -223,7 +212,6 @@ namespace CaptureSystem
 
             if (status && (texture.width != 8 && texture.height != 8))
             {
-
                 captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position);
             }
 
@@ -251,4 +239,4 @@ namespace CaptureSystem
 #endif
         }
     }
-}
+

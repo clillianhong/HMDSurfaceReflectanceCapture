@@ -7,6 +7,10 @@ using Supercluster.KDTree;
 namespace CaptureSystem
 {
 
+    /// <summary>
+    /// A collection of Captures that can be organized into a KDTree for ease of finding the nearest neighbor. 
+    /// </summary>
+
     public class CaptureViewCollection
     {
         // Start is called before the first frame update
@@ -18,6 +22,9 @@ namespace CaptureSystem
             captures = new List<Capture>();
         }
 
+        /// <summary>
+        /// GenerateKDTree creates a KDTree of 3 dimensions, out of their world coordinate positions, with each position being associated with a Capture node.<!-- -->
+        /// </summary>
         public void GenerateKDTree()
         {
             Debug.Log("Beginning KDTree generation");
@@ -31,8 +38,7 @@ namespace CaptureSystem
                 data[i] = pt;
             }
 
-            // Define the metric function
-            // This will be called many times make it as fast as possible
+            // The metric function for determining distance within the KDTree
             Func<double[], double[], double> L2Norm = (x, y) =>
             {
                 double dist = 0f;
@@ -47,6 +53,8 @@ namespace CaptureSystem
             kdTree = new KDTree<double, Capture>(dimensions: 3, points: data, nodes: captures.ToArray(), metric: L2Norm);
             Debug.Log("Successfully created KDTree!");
         }
+
+        
 
     }
 

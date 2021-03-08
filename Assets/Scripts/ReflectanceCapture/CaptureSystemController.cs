@@ -16,15 +16,18 @@ namespace CaptureSystem
     {
         // Start is called before the first frame update
 
+        //controller for the main camera
         public CameraController cameraController;
 
+        //controller of the capture view collection
         public CaptureViewController captureViewController;
 
+        //controller of the user interface and ML device display
         private UserInterfaceController userInterfaceController;
 
 
         /////// CAMERA UI CODE ////////////////////
-
+        //TODO: move the status text and all UI elements into the user interface controller 
 
         [SerializeField, Space, Tooltip("MLControllerConnectionHandlerBehavior reference.")]
         private MLControllerConnectionHandlerBehavior _controllerConnectionHandler = null;
@@ -46,10 +49,8 @@ namespace CaptureSystem
             userInterfaceController = GameObject.Find("UserInterfaceController").GetComponent<UserInterfaceController>();
             CheckObjectsSet();
             CheckPermissions();
-
-
-
         }
+
         /// <summary>
         /// Handles the event for button down.
         /// </summary>
@@ -72,6 +73,9 @@ namespace CaptureSystem
             }
         }
 
+        /// <summary>
+        /// Callback after a new capture is registered in the collection - renders it as a small thumbnail 
+        /// </summary>
         private void OnCaptureCreated()
         {
             //generate UI capture thumbnail 
@@ -143,6 +147,10 @@ namespace CaptureSystem
             }
         }
 
+
+        /// <summary>
+        /// Unregisters all callback functions
+        /// </summary>
         void UnregisterCallbacks()
         {
             captureViewController.OnCaptureCreated -= OnCaptureCreated;
@@ -150,7 +158,9 @@ namespace CaptureSystem
         }
 
 
-
+        /// <summary>
+        /// Checks if each object that needs to be set in the editor/OnAwake has been set.<!-- -->
+        /// </summary>
         void CheckObjectsSet()
         {
             if (_controllerConnectionHandler == null)
@@ -180,11 +190,12 @@ namespace CaptureSystem
                 enabled = false;
                 return;
             }
-
-
-
         }
 
+
+        /// <summary>
+        /// Attempts to acquire all necessary permissions from the user.<!-- -->
+        /// </summary>
         void CheckPermissions()
         {
             // Before enabling the Camera, the scene must wait until the privilege has been granted.
@@ -206,6 +217,9 @@ namespace CaptureSystem
         }
 
 
+        /// <summary>
+        /// Abstraction for requesting a privilege using the MLPrivilegesStarterKit 
+        /// </summary>
         void RequestPermission(MLPrivileges.Id id, string errorMessage, Action<MLResult> action)
         {
             MLResult result = MLPrivilegesStarterKit.RequestPrivilegesAsync(action, id);
@@ -245,12 +259,12 @@ namespace CaptureSystem
         }
 
         /// <summary>
-        /// Responds to privilege requester result.
+        /// Responds to privilege requester result, default action does nothing
         /// </summary>
         /// <param name="result"/>
         private void DefaultPermissionAction(MLResult result)
         {
-
+            //do nothing
         }
 
     }
