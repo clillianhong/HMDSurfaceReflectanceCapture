@@ -21,12 +21,26 @@ namespace CaptureSystem
 
         Vector3 worldPosition;
 
-        Dictionary<string, ImageSamplePoint> sampleCaptures;
+        Dictionary<ChannelColor, ImageSamplePoint> sampleCaptures;
 
         public SurfacePointData(Vector3 worldPos)
         {
-            sampleCaptures = new Dictionary<string, ImageSamplePoint>();
+            sampleCaptures = new Dictionary<ChannelColor, ImageSamplePoint>();
             worldPosition = worldPos;
+        }
+
+        public void addCapture(ChannelColor color, string ID, int xS, int yS)
+        {
+            ImageSamplePoint sp = new ImageSamplePoint();
+            sp.captureID = ID;
+            sp.x = xS;
+            sp.y = yS;
+            sampleCaptures.Add(color, sp);
+        }
+
+        public bool hasChannel(ChannelColor color)
+        {
+            return sampleCaptures.ContainsKey(color);
         }
 
     }
@@ -40,8 +54,15 @@ namespace CaptureSystem
     /// </summary>
     struct ImageSamplePoint
     {
-        string captureID;
-        int x;
-        int y;
+        public string captureID;
+        public int x;
+        public int y;
+    }
+
+    public enum ChannelColor
+    {
+        RED,
+        BLUE,
+        GREEN
     }
 }

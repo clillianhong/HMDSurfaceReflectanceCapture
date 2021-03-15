@@ -18,12 +18,16 @@ namespace Simulation.Viewer
     public class LightFieldViewManager : MonoBehaviour
     {
 
+
         public GameObject focalPointPrefab;
 
         public string lightFieldName;
+
         public GameObject projectorPlanePrefab;
+
         public GameObject imagePreviewPrefab;
 
+        public bool preloadSession = false;
 
         public GameObject focalPoint
         {
@@ -99,15 +103,19 @@ namespace Simulation.Viewer
                         line.SetPosition(1, radiusEnd);
 
                         //load light field with transformations
-                        string jsonPath = Loader.PathFromSessionName(lightFieldName) + "/capture.json";
-                        _lightField = new LightField(JsonUtility.FromJson<LightFieldJsonData>(Simulation.Utils.Loader.LoadJsonText(jsonPath)), radius, focalPoint.transform.position);
-                        captureViewObjs = new GameObject[_lightField.captures.Length];
-                        for (int i = 0; i < _lightField.captures.Length; i++)
+                        if (preloadSession)
                         {
-                            MLCaptureView captureView = _lightField.captures[i];
-                            captureViewObjs[i] = createCapturePreviewObject(captureView);
+                            string jsonPath = Loader.PathFromSessionName(lightFieldName) + "/capture.json";
+                            _lightField = new LightField(JsonUtility.FromJson<LightFieldJsonData>(Simulation.Utils.Loader.LoadJsonText(jsonPath)), radius, focalPoint.transform.position);
+                            captureViewObjs = new GameObject[_lightField.captures.Length];
+                            for (int i = 0; i < _lightField.captures.Length; i++)
+                            {
+                                MLCaptureView captureView = _lightField.captures[i];
+                                captureViewObjs[i] = createCapturePreviewObject(captureView);
 
+                            }
                         }
+
                         transitionState(LFManagerState.ACTIVE);
 
                         break;

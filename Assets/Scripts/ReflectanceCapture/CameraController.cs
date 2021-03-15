@@ -214,9 +214,6 @@ namespace CaptureSystem
             {
                 captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position);
             }
-
-
-
         }
 
         /// <summary>
@@ -240,3 +237,4 @@ namespace CaptureSystem
         }
     }
 
+}
