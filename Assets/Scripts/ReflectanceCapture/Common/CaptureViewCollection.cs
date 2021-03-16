@@ -14,12 +14,12 @@ namespace CaptureSystem
     public class CaptureViewCollection
     {
         // Start is called before the first frame update
-        public List<Capture> captures;
+        public Dictionary<string, Capture> captures;
         public KDTree<double, Capture> kdTree;
 
         public CaptureViewCollection()
         {
-            captures = new List<Capture>();
+            captures = new Dictionary<string, Capture>();
         }
 
         /// <summary>
@@ -29,13 +29,15 @@ namespace CaptureSystem
         {
             Debug.Log("Beginning KDTree generation");
             var data = new double[captures.Count][];
-            for (int i = 0; i < captures.Count; i++)
+            var idx = 0;
+            foreach (KeyValuePair<string, Capture> entry in captures)
             {
                 var pt = new double[3];
-                pt[0] = captures[i].cameraPose.position.x;
-                pt[1] = captures[i].cameraPose.position.y;
-                pt[2] = captures[i].cameraPose.position.z;
-                data[i] = pt;
+                pt[0] = entry.Value.cameraPose.position.x;
+                pt[1] = entry.Value.cameraPose.position.y;
+                pt[2] = entry.Value.cameraPose.position.z;
+                data[idx] = pt;
+                idx++;
             }
 
             // The metric function for determining distance within the KDTree
@@ -50,11 +52,11 @@ namespace CaptureSystem
                 return dist;
             };
 
-            kdTree = new KDTree<double, Capture>(dimensions: 3, points: data, nodes: captures.ToArray(), metric: L2Norm);
+            kdTree = new KDTree<double, Capture>(dimensions: 3, points: data, nodes: new List<Capture>(captures.Values).ToArray(), metric: L2Norm);
             Debug.Log("Successfully created KDTree!");
         }
 
-        
+
 
     }
 

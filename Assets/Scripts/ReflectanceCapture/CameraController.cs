@@ -110,7 +110,6 @@ namespace CaptureSystem
 
 
 
-
         /// <summary>
         /// Captures a still image using the device's camera and returns
         /// the data path where it is saved.
@@ -205,14 +204,13 @@ namespace CaptureSystem
             {
                 _isCapturing = false;
             }
-            // Initialize to 8x8 texture so there is no discrepency
             // between uninitalized captures and error texture
-            Texture2D texture = new Texture2D(8, 8);
+            Texture2D texture = new Texture2D(Camera.main.pixelWidth, Camera.main.pixelHeight);
             bool status = texture.LoadImage(imageData);
 
-            if (status && (texture.width != 8 && texture.height != 8))
+            if (status)
             {
-                captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position);
+                captureViewController.CreateCaptureView(texture, Camera.main.transform, controller.transform.position, Camera.main.projectionMatrix, Camera.main.worldToCameraMatrix);
             }
         }
 
@@ -234,6 +232,12 @@ namespace CaptureSystem
                 }
             }
 #endif
+        }
+
+
+        public static bool IsVisible(Vector3 ndc)
+        {
+            return ndc.x <= 1 && ndc.x >= -1 && ndc.y <= 1 && ndc.y >= -1 && ndc.z <= 1 && ndc.z >= -1;
         }
     }
 

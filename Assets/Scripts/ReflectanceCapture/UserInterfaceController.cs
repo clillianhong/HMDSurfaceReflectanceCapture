@@ -51,14 +51,27 @@ namespace CaptureSystem
         public GameObject CreateCapturePreviewObject(Capture captureView)
         {
             GameObject obj = GameObject.Instantiate(captureViewThumbnailPrefab, captureView.cameraPose.position, captureView.cameraPose.rotation);
-            obj.GetComponent<MeshRenderer>().material.mainTexture = captureView.texture;
 
-            //upon first capture 
-            if (!_closestObject.activeInHierarchy)
+            Texture2D previewTex = new Texture2D(8, 8);
+            byte[] imgData = captureView.texture.GetRawTextureData();
+            var success = previewTex.LoadImage(imgData);
+            if (success)
             {
-                _closestObject.SetActive(true);
-                UpdateClosestPreview(captureView);
+                obj.GetComponent<MeshRenderer>().material.mainTexture = captureView.texture;
+
+                //upon first capture 
+                if (!_closestObject.activeInHierarchy)
+                {
+                    _closestObject.SetActive(true);
+                    UpdateClosestPreview(captureView);
+                }
+                else
+                {
+                    Debug.Log("Failed to load preview image object texture.");
+                }
+
             }
+
 
             return obj;
         }

@@ -12,7 +12,7 @@ namespace CaptureSystem
         private CaptureViewCollection _collection;
 
         //callback for capture creation event
-        public event Action OnCaptureCreated = null;
+        public event Action<string> OnCaptureCreated = null;
 
         //counter for generating capture IDs 
         private int nextIDNum;
@@ -45,17 +45,17 @@ namespace CaptureSystem
         /// <param name="camTransform">The transform of the camera, used to populate the copy transform struct</param>
         /// <param name="lightPos">The position of the point light source.</param>
 
-        public void CreateCaptureView(Texture2D texture, Transform camTransform, Vector3 lightPos)
+        public void CreateCaptureView(Texture2D texture, Transform camTransform, Vector3 lightPos, Matrix4x4 projMat, Matrix4x4 worldToCam)
         {
             float thetaS = 0; //TODO: ACTUALLY CALCULATE THETA S 
 
             Transform newTransform = camTransform;
 
-            Capture newCapture = new Capture("" + nextIDNum, texture, thetaS, camTransform, lightPos);
+            Capture newCapture = new Capture("" + nextIDNum, texture, thetaS, camTransform, lightPos, projMat, worldToCam);
             nextIDNum++;
-            _collection.captures.Add(newCapture);
+            _collection.captures.Add(newCapture.captureID, newCapture);
             Debug.Log("Capture added to collection with ID " + newCapture.captureID);
-            OnCaptureCreated?.Invoke();
+            OnCaptureCreated?.Invoke(newCapture.captureID);
         }
 
 

@@ -25,6 +25,11 @@ namespace CaptureSystem
         //controller of the user interface and ML device display
         private UserInterfaceController userInterfaceController;
 
+        //MagicLeap controller 
+        private MLInput.Controller _controller;
+
+        private CoverageMap coverageMap;
+
 
         /////// CAMERA UI CODE ////////////////////
         //TODO: move the status text and all UI elements into the user interface controller 
@@ -47,8 +52,16 @@ namespace CaptureSystem
             captureViewController = GameObject.Find("CaptureViewController").GetComponent<CaptureViewController>();
             captureViewController.OnCaptureCreated += OnCaptureCreated;
             userInterfaceController = GameObject.Find("UserInterfaceController").GetComponent<UserInterfaceController>();
+
             CheckObjectsSet();
             CheckPermissions();
+        }
+
+
+        void Start()
+        {
+            MLInput.Start();
+            _controller = MLInput.GetController(MLInput.Hand.Left);
         }
 
         /// <summary>
@@ -60,38 +73,65 @@ namespace CaptureSystem
         {
             if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.Bumper == button && !cameraController.isCapturing)
             {
+                //capture an image
                 cameraController.TriggerAsyncCapture();
                 _statusText.text = "New capture!";
-                captureViewController.collection.GenerateKDTree();
+                // captureViewController.collection.GenerateKDTree();
             }
             else if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.HomeTap == button)
             {
+                //finds nearest neighbor and displays on status text 
+                // var nearestCapture = captureViewController.NearestNeighbor(Camera.main.transform.position);
+                // _statusText.text = "Nearest neighbor is capture " + nearestCapture.captureID;
+                // userInterfaceController.UpdateClosestPreview(nearestCapture);
 
-                var nearestCapture = captureViewController.NearestNeighbor(Camera.main.transform.position);
-                _statusText.text = "Nearest neighbor is capture " + nearestCapture.captureID;
-                userInterfaceController.UpdateClosestPreview(nearestCapture);
+
+                //create rectangle where the controller location is 
+                // var centerPos = _controller.Position;
+                Debug.Log("Starting rect ");
+
+                var centerPos = _controller.Position;
+                Debug.Log("after camera main ");
+
+                var width = 0.05f;
+                var height = 0.1f;
+                var u = width * Vector3.right;
+                var v = height * Vector3.forward;
+
+                var bl = centerPos - u - v;
+                var br = centerPos - v + u;
+                var ul = centerPos - u + v;
+                var ur = centerPos + u + v;
+
+                coverageMap = GameObject.Find("CoverageMap").GetComponent<CoverageMap>();
+                coverageMap.InitCoverageMap(bl, ul, br, ur, 10, 20);
+                Debug.Log("Coverage Map instantiated");
+
             }
         }
 
         /// <summary>
         /// Callback after a new capture is registered in the collection - renders it as a small thumbnail 
         /// </summary>
-        private void OnCaptureCreated()
+        private void OnCaptureCreated(string captureID)
         {
             //generate UI capture thumbnail 
-            Capture newCapture = captureViewController.collection.captures?.ElementAt(captureViewController.collection.captures.Count - 1);
-            GameObject previewObj = userInterfaceController.CreateCapturePreviewObject(newCapture);
-            if (previewObj != null)
+            Capture newCapture;
+            bool success = captureViewController.collection.captures.TryGetValue(captureID, out newCapture);
+            if (success)
             {
-                Debug.Log("preview object made at location " + previewObj.transform.position);
+                GameObject previewObj = userInterfaceController.CreateCapturePreviewObject(newCapture);
+                if (previewObj != null)
+                {
+                    Debug.Log("preview object made at location " + previewObj.transform.position);
+                }
+
+                coverageMap?.UpdateSurfacePoint(coverageMap.bottomLeftPos, newCapture);
+
             }
 
         }
 
-        void Start()
-        {
-
-        }
 
         /// <summary>
         /// Display privilege error if necessary or update status text.
@@ -155,6 +195,7 @@ namespace CaptureSystem
         {
             captureViewController.OnCaptureCreated -= OnCaptureCreated;
             MLInput.OnControllerButtonDown -= OnButtonDown;
+            MLInput.Stop();
         }
 
 

@@ -19,7 +19,7 @@ namespace CaptureSystem
 
         // Start is called before the first frame update
 
-        public Capture(string ID, Texture2D tex, float theS, Transform camTrans, Vector3 lightPos)
+        public Capture(string ID, Texture2D tex, float theS, Transform camTrans, Vector3 lightPos, Matrix4x4 projMat, Matrix4x4 worldToCam)
         {
             captureID = ID;
             texture = tex;
@@ -30,6 +30,8 @@ namespace CaptureSystem
             cameraPose.position = camTrans.position;
             cameraPose.right = camTrans.right;
             cameraPose.rotation = camTrans.rotation;
+            cameraPose.projectionMat = projMat;
+            cameraPose.worldToCameraMat = worldToCam;
 
             pointLightPosition = lightPos;
         }
@@ -45,5 +47,8 @@ namespace CaptureSystem
         public Vector3 position;
 
         public Quaternion rotation;
+
+        public Matrix4x4 projectionMat;
+        public Matrix4x4 worldToCameraMat;
     }
 }
