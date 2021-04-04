@@ -76,6 +76,21 @@ namespace CaptureSystem
             return obj;
         }
 
+        public GameObject CreateImagePreviewObject(Vector3 position, Quaternion rotation, Texture2D image)
+        {
+            GameObject obj = GameObject.Instantiate(captureViewThumbnailPrefab, position, rotation);
+
+            Texture2D previewTex = new Texture2D(8, 8);
+            byte[] imgData = image.GetRawTextureData();
+            var success = previewTex.LoadImage(imgData);
+            if (success)
+            {
+                obj.GetComponent<MeshRenderer>().material.mainTexture = image;
+            }
+            Debug.Log("successfully created image preview object");
+            return obj;
+        }
+
 
     }
 

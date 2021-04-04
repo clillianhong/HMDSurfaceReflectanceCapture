@@ -14,7 +14,6 @@ namespace CaptureSystem
 {
     public class CaptureSystemController : MonoBehaviour
     {
-        // Start is called before the first frame update
 
         //controller for the main camera
         public CameraController cameraController;
@@ -32,18 +31,15 @@ namespace CaptureSystem
 
 
         /////// CAMERA UI CODE ////////////////////
-        //TODO: move the status text and all UI elements into the user interface controller 
 
         [SerializeField, Space, Tooltip("MLControllerConnectionHandlerBehavior reference.")]
         private MLControllerConnectionHandlerBehavior _controllerConnectionHandler = null;
 
         [SerializeField, Tooltip("The text used to display status information for the example.")]
         private Text _statusText = null;
-
         private bool _privilegesBeingRequested = false;
 
         /////// CAMERA UI CODE END ////////////////
-
 
         void Awake()
         {
@@ -85,7 +81,6 @@ namespace CaptureSystem
                 // _statusText.text = "Nearest neighbor is capture " + nearestCapture.captureID;
                 // userInterfaceController.UpdateClosestPreview(nearestCapture);
 
-
                 //create rectangle where the controller location is 
                 // var centerPos = _controller.Position;
                 Debug.Log("Starting rect ");
@@ -105,9 +100,16 @@ namespace CaptureSystem
 
                 coverageMap = GameObject.Find("CoverageMap").GetComponent<CoverageMap>();
                 coverageMap.InitCoverageMap(bl, ul, br, ur, 10, 20);
+                InvokeRepeating("UpdateCoverageMap", 2.0f, 0.3f);
+
                 Debug.Log("Coverage Map instantiated");
 
             }
+        }
+
+        public void UpdateCoverageMap()
+        {
+            coverageMap.UpdateCoverageMap(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix, Camera.main.transform.position, _controller.Position);
         }
 
         /// <summary>
@@ -126,8 +128,10 @@ namespace CaptureSystem
                     Debug.Log("preview object made at location " + previewObj.transform.position);
                 }
 
-                coverageMap?.UpdateSurfacePoint(coverageMap.bottomLeftPos, newCapture);
+                var samplesTex = coverageMap?.OnCaptureTaken(newCapture);
+                Debug.Log("SAMPLE TEXTURE BYTES " + samplesTex.GetPixels());
 
+                userInterfaceController.CreateImagePreviewObject(_controller.Position, Quaternion.identity, samplesTex);
             }
 
         }
