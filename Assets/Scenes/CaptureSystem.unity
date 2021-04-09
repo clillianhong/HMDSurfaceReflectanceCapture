@@ -1354,8 +1354,8 @@ MonoBehaviour:
   previewCube: {fileID: 1664091895}
   ballPrefab: {fileID: 5054246646726864911, guid: 909636015ead9974385f337fda5a0a3e,
     type: 3}
-  xSamples: 8
-  ySamples: 8
+  xSamples: 30
+  ySamples: 40
 --- !u!1 &1545514831
 GameObject:
   m_ObjectHideFlags: 0

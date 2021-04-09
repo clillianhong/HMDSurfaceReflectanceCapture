@@ -10,7 +10,7 @@ PrefabInstance:
     - target: {fileID: 4016720850342458225, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
         type: 3}
       propertyPath: m_Name
-      value: FocalPoint
+      value: focal point small
       objectReference: {fileID: 0}
     - target: {fileID: 6177985918701257604, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
         type: 3}
@@ -70,17 +70,17 @@ PrefabInstance:
     - target: {fileID: 6177985918701257604, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.005
+      value: 0.001
       objectReference: {fileID: 0}
     - target: {fileID: 6177985918701257604, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.005
+      value: 0.001
       objectReference: {fileID: 0}
     - target: {fileID: 6177985918701257604, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.005
+      value: 0.001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4cd1a87d9d36e474eb3cf67195d4296e, type: 3}

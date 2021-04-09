@@ -72,6 +72,7 @@ namespace CaptureSystem
                 //capture an image
                 cameraController.TriggerAsyncCapture();
                 _statusText.text = "New capture!";
+
                 // captureViewController.collection.GenerateKDTree();
             }
             else if (_controllerConnectionHandler.IsControllerValid(controllerId) && MLInput.Controller.Button.HomeTap == button)
@@ -105,7 +106,21 @@ namespace CaptureSystem
                 Debug.Log("Coverage Map instantiated");
 
             }
+
         }
+
+        private void OnTriggerDown(byte controllerId, float triggerValue)
+        {
+
+            int debugVal = 1 - coverageMap.gameObject.GetComponent<MeshRenderer>().sharedMaterial.GetInt("debug");
+            if (triggerValue > 0.5)
+            {
+                Debug.Log("Trigger pressed down, changing int to: " + debugVal);
+                coverageMap.gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetInt("debug", debugVal);
+            }
+        }
+
+
 
         public void UpdateCoverageMap()
         {
@@ -128,8 +143,11 @@ namespace CaptureSystem
                     Debug.Log("preview object made at location " + previewObj.transform.position);
                 }
 
-                var samplesTex = coverageMap?.OnCaptureTaken(newCapture);
-                Debug.Log("SAMPLE TEXTURE BYTES " + samplesTex.GetPixels());
+                var tup = coverageMap?.OnCaptureTaken(newCapture);
+                Texture2D samplesTex = tup.Item1;
+                float percentSampled = tup.Item2;
+
+                _statusText.text += "\nPercent sampled: " + percentSampled * 100 + "%";
 
                 userInterfaceController.CreateImagePreviewObject(_controller.Position, Quaternion.identity, samplesTex);
             }
@@ -199,6 +217,7 @@ namespace CaptureSystem
         {
             captureViewController.OnCaptureCreated -= OnCaptureCreated;
             MLInput.OnControllerButtonDown -= OnButtonDown;
+            MLInput.OnTriggerDown -= OnTriggerDown;
             MLInput.Stop();
         }
 
@@ -300,6 +319,7 @@ namespace CaptureSystem
             cameraController.StartCapture(); //TODO: call camera start capture to enable the camera and callbacks
 #if PLATFORM_LUMIN
             MLInput.OnControllerButtonDown += OnButtonDown;
+            MLInput.OnTriggerDown += OnTriggerDown;
 #endif
         }
 

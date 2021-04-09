@@ -96,8 +96,8 @@ namespace CaptureSystem
             _upperLeftPos = ul;
             _bottomRightPos = br;
             _upperRightPos = ur;
-            xSamples = numXSamples;
-            ySamples = numYSamples;
+            // xSamples = numXSamples;
+            // ySamples = numYSamples;
             rightVec = (_upperRightPos - _upperLeftPos).normalized;
             downVec = (_bottomLeftPos - _upperLeftPos).normalized;
             normalVec = Vector3.Cross(rightVec, downVec);
@@ -124,6 +124,7 @@ namespace CaptureSystem
 
             Debug.Log("Creating balls");
 
+            //four corners and the normal vector 
             GameObject.Instantiate(ballPrefab, _upperRightPos, Quaternion.identity);
             GameObject.Instantiate(ballPrefab, _bottomLeftPos, Quaternion.identity);
             GameObject.Instantiate(ballPrefab, _upperLeftPos, Quaternion.identity);
@@ -132,19 +133,19 @@ namespace CaptureSystem
 
             gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetFloat("beta1", beta1);
             gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetFloat("beta2", beta2);
+            gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetInt("debug", 0);
 
             Texture2D clearTex = new Texture2D(xSamples, ySamples);
             for (int x = 0; x < xSamples; x++)
             {
                 for (int y = 0; y < ySamples; y++)
                 {
-                    clearTex.SetPixel(0, 0, new Color(0, 0, 0, 1f));
+                    clearTex.SetPixel(x, y, new Color(0, 0, 0, 1f));
                 }
             }
+            clearTex.Apply();
 
-            gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("mapTexture", clearTex);
-
-            Graphics.Blit(coverageMapMaterial.mainTexture, renderTexture);
+            gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", clearTex);
 
             // previewCube.GetComponent<MeshRenderer>().material.mainTexture = gameObject.GetComponent<MeshRenderer>().sharedMaterial.mainTexture;
 
@@ -155,8 +156,6 @@ namespace CaptureSystem
         void Start()
         {
             CheckVariablesSet();
-
-
         }
 
         void Update()
@@ -186,15 +185,76 @@ namespace CaptureSystem
             // meshRenderer.sharedMaterial.mainTexture = tex;
         }
 
-        public Texture2D OnCaptureTaken(Capture capture)
+        // public void updateShaderMapTexture()
+        // {
+        //     Texture2D clearTex = new Texture2D(xSamples, ySamples);
+        //     for (int x = 0; x < xSamples; x++)
+        //     {
+        //         for (int y = 0; y < ySamples; y++)
+        //         {
+        //             if (x < y)
+        //             {
+        //                 clearTex.SetPixel(x, y, new Color(1, 0, 0, 1f));
+        //             }
+        //             else
+        //             {
+        //                 clearTex.SetPixel(x, y, new Color(0, 1, 0, 1f));
+        //             }
+
+        //         }
+        //     }
+
+        //     var renderTexture = new RenderTexture(xSamples, ySamples, 16);
+
+        //     RenderTexture activeRenderTexture = RenderTexture.active;
+
+        //     var renderer = gameObject.GetComponent<MeshRenderer>();
+        //     var material = Instantiate(renderer.sharedMaterial);
+
+        //     material.SetFloat("beta1", beta1);
+        //     material.SetFloat("beta2", beta2);
+        //     material.SetInt("debug", 0);
+
+        //     material.SetMatrix("camNDCMat", gameObject.GetComponent<MeshRenderer>().sharedMaterial.GetMatrix("camNDCMat"));
+        //     material.SetVector("camPos", gameObject.GetComponent<MeshRenderer>().sharedMaterial.GetVector("camPos"));
+        //     material.SetVector("lightPos", gameObject.GetComponent<MeshRenderer>().sharedMaterial.GetVector("lightPos"));
+        //     material.SetTexture("_MainTex", clearTex);
+
+        //     Graphics.Blit(clearTex, renderTexture, material);
+        //     RenderTexture.active = renderTexture;
+        //     Texture2D frame = new Texture2D(renderTexture.width, renderTexture.height);
+        //     frame.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0, false);
+        //     frame.Apply();
+
+        //     RenderTexture.active = activeRenderTexture;
+
+        //     previewCube.GetComponent<MeshRenderer>().material.mainTexture = frame;
+
+        //     // foreach (var color in frame.GetPixels())
+        //     // {
+        //     //     Debug.Log("FRAM TEXTYRE (" + color.r + ", " + color.g + ", " + color.b + ")");
+
+        //     // }
+
+        //     // Graphics.Blit(coverageMapMaterial., renderTexture);
+        //     gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("mapTexture", frame);
+        // }
+
+        public Tuple<Texture2D, float> OnCaptureTaken(Capture capture)
         {
 
-            return UpdateSurfaceData(capture, true);
+            var output = UpdateSurfaceData(capture, true);
 
-            // Graphics.Blit(coverageMapMaterial.mainTexture, renderTexture);
-            // previewCube.GetComponent<MeshRenderer>().material.mainTexture = gameObject.GetComponent<MeshRenderer>().sharedMaterial.mainTexture;
-            // Debug.Log("preview cube texture updated");
+            Texture2D oldCoverageMapTex = (Texture2D)gameObject.GetComponent<MeshRenderer>().sharedMaterial.GetTexture("_MapTexture");
+            Texture2D newCoverageMapTex = CreateCoverageMapTexture(capture, oldCoverageMapTex);
 
+            Debug.Log("NEW COVERAGE MAP " + newCoverageMapTex.GetPixel(2, 2));
+
+            previewCube.GetComponent<MeshRenderer>().material.mainTexture = newCoverageMapTex;
+
+            gameObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", newCoverageMapTex);
+
+            return new Tuple<Texture2D, float>(newCoverageMapTex, output.Item2);
         }
 
         private void CheckVariablesSet()
@@ -238,6 +298,8 @@ namespace CaptureSystem
             //TODO: clarify with #2 
             int sampleIdx = 0;
             int meshIdx = 0;
+            Debug.Log("ySamples " + ySamples);
+            Debug.Log("xSamples " + xSamples);
             for (float y = 0; y <= ySamples; y++)
             {
                 for (float x = 0; x <= xSamples; x++)
@@ -249,7 +311,9 @@ namespace CaptureSystem
 
                     //mesh generation
                     normals[meshIdx] = normalVec;
-                    uv[meshIdx] = new Vector2(x / (float)xSamples, y / (float)ySamples);
+                    uv[meshIdx] = new Vector2(((x * dx) / recWidth), (y * dy) / recHeight);
+                    // uv[meshIdx] = new Vector2(0, 0);
+                    // Debug.Log("MESH UVS " + uv[meshIdx]);
 
                     if (x < xSamples && y < ySamples)
                     {
@@ -310,10 +374,9 @@ namespace CaptureSystem
         ///     Updates all the surface point data when a new capture is taken 
         /// </summary>
 
-        public Texture2D UpdateSurfaceData(Capture capture, bool updateTexture = false)
+        public Tuple<Texture2D, float> UpdateSurfaceData(Capture capture, bool updateTexture = false)
         {
-            int numSamples = 0;
-            int rawSamples = 0;
+            int numFullySampled = 0;
 
             for (int y = 0; y < ySamples; y++)
             {
@@ -345,28 +408,15 @@ namespace CaptureSystem
                         samplesTexture.SetPixel(x, y, col);
                         if (channels == 3)
                         {
-                            numSamples++;
+                            numFullySampled++;
                         }
-                        rawSamples += channels;
                         // Debug.Log("updated color " + col);
                     }
                 }
             }
 
-            if (numSamples == xSamples * ySamples)
-            {
 
-                Debug.Log("All samples full coverage!");
-                // Debug.Log("updating preview cube texture " + samplesTexture.GetPixel(lastX, lastY));
-                // gameObject.GetComponent<MeshRenderer>().material.mainTexture = samplesTexture;
-            }
-            else
-            {
-                Debug.Log("Percent numSamples: " + (float)numSamples / (float)(xSamples * ySamples) + "%");
-                Debug.Log("Percent rawSamples: " + (float)rawSamples / (float)(xSamples * ySamples) + "%");
-            }
-
-            return samplesTexture;
+            return new Tuple<Texture2D, float>(samplesTexture, numFullySampled / ((float)ySamples * xSamples));
             //calls UpdateSurfacePoint
             //calls 
         }
@@ -424,8 +474,56 @@ namespace CaptureSystem
         ///     Updates the entire coverage map's color map texture when a new capture is taken 
         /// </summary>
 
-        private void RetextureColorMap()
+        private Texture2D CreateCoverageMapTexture(Capture capture, Texture2D oldCoverageMapTex)
         {
+
+            Texture2D coverageMapTexture = new Texture2D(xSamples, ySamples);
+
+            for (int y = 0; y < ySamples; y++)
+            {
+                for (int x = 0; x < xSamples; x++)
+                {
+                    Vector3 surfacePoint = vectorFromPixels(x, y);
+                    Vector4 ndc4 = capture.cameraPose.projectionMat * capture.cameraPose.worldToCameraMat * surfacePoint;
+                    Vector3 ndc = new Vector3(ndc4.x, ndc4.y, ndc4.z);
+                    Color pixelColor = oldCoverageMapTex.GetPixel(x, y);
+                    pixelColor.a = 1;
+
+                    // if (ndc.x <= 1 && ndc.x >= -1 && ndc.y <= 1 && ndc.y >= -1 && ndc.z <= 1 && ndc.z >= -1)
+                    // {
+                    Vector3 viewDir = (capture.cameraPose.position - surfacePoint).normalized;
+                    Vector3 lightDir = (capture.pointLightPosition - surfacePoint).normalized;
+                    Vector3 halfVec = (viewDir + lightDir).normalized;
+
+                    float thetaS = 180.0f * ((float)Math.Acos(Vector3.Dot(halfVec, normalVec))) / (float)Math.PI;
+                    // Debug.Log("theta " + thetaS + " b1 " + beta1 + " b2 " + beta2);
+
+                    if (thetaS <= beta1)
+                    {
+                        // Debug.Log("PIXEL IS green");
+                        pixelColor.g = 1.0f;
+                    }
+                    if (thetaS > beta1 && thetaS < beta2)
+                    {
+
+                        // Debug.Log("PIXEL IS blue");
+                        pixelColor.b = 1.0f;
+                    }
+                    if (thetaS >= beta2)
+                    {
+                        // Debug.Log("PIXEL IS RED");
+                        pixelColor.r = 1.0f;
+                    }
+                    // }
+
+                    coverageMapTexture.SetPixel(x, y, pixelColor);
+
+                }
+            }
+            coverageMapTexture.Apply();
+
+            return coverageMapTexture;
+
 
         }
 
