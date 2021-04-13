@@ -7,6 +7,15 @@ using Simulation.Utils;
 namespace Simulation
 {
 
+    public enum LFManagerState
+    {
+        SETUP_FOCAL,
+        SETUP_RADIUS,
+
+        ACTIVE,
+        STOPPED
+    }
+
     public class LightField
     {
         public string sessionName;

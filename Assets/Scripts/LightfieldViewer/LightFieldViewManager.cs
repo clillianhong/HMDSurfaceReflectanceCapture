@@ -7,14 +7,7 @@ using Simulation.Utils;
 namespace Simulation.Viewer
 {
 
-    public enum LFManagerState
-    {
-        SETUP_FOCAL,
-        SETUP_RADIUS,
 
-        ACTIVE,
-        STOPPED
-    }
     public class LightFieldViewManager : MonoBehaviour
     {
 
@@ -209,6 +202,12 @@ namespace Simulation.Viewer
         {
             LFManagerState oldState = _currentState;
             _currentState = newState;
+        }
+
+        public void StopCurrentSession()
+        {
+            MLInput.OnControllerButtonDown -= OnButtonDown;
+            MLInput.OnControllerButtonUp -= OnButtonUp;
         }
     }
 
