@@ -1,71 +1,284 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿// %BANNER_BEGIN%
+// ---------------------------------------------------------------------
+// %COPYRIGHT_BEGIN%
+//
+// Copyright (c) 2019-present, Magic Leap, Inc. All Rights Reserved.
+// Use of this file is governed by the Developer Agreement, located
+// here: https://auth.magicleap.com/terms/developer
+//
+// %COPYRIGHT_END%
+// ---------------------------------------------------------------------
+// %BANNER_END%
+
+using System;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Events;
 using UnityEngine.XR.MagicLeap;
-using UnityEngine.UIElements;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
+using MagicLeap.Core.StarterKit;
+using MagicLeap;
 
 namespace Simulation.Viewer
 {
 
     public class LFCaptureManager : MonoBehaviour
     {
-        // Start is called before the first frame update
 
-        /*
-        input: 
-        - sessionName 
-        - degrees to take next capture 
-        - record capture session and save it 
-            - establish focal point for capture 
-            -  click home to start capture 
-                - add to collection 
-                - potentially take image every 0.5 seconds      
-                - automatically take image every time angle between you nearest capture increases by more than X degrees (kdTree!) 
-                    - render dot on unit sphere around focal point
-            - click home to stop capture 
-        */
+        //ML remote controller
 
-        private string currentSessionName;
-        public float degreeDifference;
+        private GameObject controller;
+        private bool _isCameraConnected = false;
 
-        void Start()
+        private bool _isCapturing = false;
+
+        public bool isCapturing
         {
+            get { return _isCapturing; }
+        }
+
+        //whether capture mode has started after getting privileges
+        private bool _hasStarted = false;
+
+        private Thread _captureThread = null;
+
+        /// <summary>
+        /// The example is using threads on the call to MLCamera.CaptureRawImageAsync to alleviate the blocking
+        /// call at the beginning of CaptureRawImageAsync, and the safest way to prevent race conditions here is to
+        /// lock our access into the MLCamera class, so that we don't accidentally shut down the camera
+        /// while the thread is attempting to work
+        /// </summary>
+        private object _cameraLockObject = new object();
+
+        private string sessionName;
+
+        private Vector3 focalPointPos;
 
 
+
+        void Awake()
+        {
+            controller = GameObject.Find("Controller");
             CheckAllObjectsSet();
+        }
+
+
+        void _CheckObjSet(UnityEngine.Object obj, string desc)
+        {
+            if (obj == null)
+            {
+                Debug.LogError("Error: " + desc + " is not set, disabling script.");
+                enabled = false;
+                return;
+            }
         }
 
         void CheckAllObjectsSet()
         {
-            if (degreeDifference <= 0)
+            _CheckObjSet(controller, "controller");
+        }
+
+
+        /// <summary>
+        /// Stop the camera, unregister callbacks, and stop input and privileges APIs.
+        /// </summary>
+        void OnDisable()
+        {
+
+
+            lock (_cameraLockObject)
             {
-                degreeDifference = 5;
+                if (_isCameraConnected)
+                {
+#if PLATFORM_LUMIN
+                    MLCamera.OnRawImageAvailable -= OnCaptureRawImageComplete;
+#endif
+
+                    _isCapturing = false;
+                    DisableMLCamera();
+                }
             }
         }
 
-        // Update is called once per frame
-        void Update()
+        /// <summary>
+        /// Cannot make the assumption that a reality privilege is still granted after
+        /// returning from pause. Return the application to the state where it
+        /// requests privileges needed and clear out the list of already granted
+        /// privileges. Also, disable the camera and unregister callbacks.
+        /// </summary>
+        void OnApplicationPause(bool pause)
         {
+            if (pause)
+            {
+                lock (_cameraLockObject)
+                {
+                    if (_isCameraConnected)
+                    {
+#if PLATFORM_LUMIN
+                        MLCamera.OnRawImageAvailable -= OnCaptureRawImageComplete;
+#endif
 
+                        _isCapturing = false;
+
+                        DisableMLCamera();
+                    }
+                }
+
+                _hasStarted = false;
+            }
+        }
+
+
+        public void StartCapturing(Vector3 pos)
+        {
+            this.focalPointPos = pos;
+            //TODO: ACTUALLY IMPLEMENT CAPTURING
+        }
+
+        /// <summary>
+        /// Captures a still image using the device's camera and returns
+        /// the data path where it is saved.
+        /// </summary>
+        public void TriggerAsyncCapture()
+        {
+            if (_captureThread == null || (!_captureThread.IsAlive))
+            {
+                ThreadStart captureThreadStart = new ThreadStart(CaptureThreadWorker);
+                _captureThread = new Thread(captureThreadStart);
+                _captureThread.Start();
+            }
+            else
+            {
+                Debug.Log("Previous thread has not finished, unable to begin a new capture just yet.");
+            }
+        }
+
+        /// <summary>
+        /// Connects the MLCamera component and instantiates a new instance
+        /// if it was never created.
+        /// </summary>
+        private void EnableMLCamera()
+        {
+#if PLATFORM_LUMIN
+            lock (_cameraLockObject)
+            {
+                MLResult result = MLCamera.Start();
+                if (result.IsOk)
+                {
+                    result = MLCamera.Connect();
+                    _isCameraConnected = true;
+                }
+                else
+                {
+                    Debug.LogErrorFormat("Error: ImageCaptureExample failed starting MLCamera, disabling script. Reason: {0}", result);
+                    enabled = false;
+                    return;
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Disconnects the MLCamera if it was ever created or connected.
+        /// </summary>
+        private void DisableMLCamera()
+        {
+#if PLATFORM_LUMIN
+            lock (_cameraLockObject)
+            {
+                if (MLCamera.IsStarted)
+                {
+                    MLCamera.Disconnect();
+                    // Explicitly set to false here as the disconnect was attempted.
+                    _isCameraConnected = false;
+                    MLCamera.Stop();
+                }
+            }
+#endif
         }
 
         public void StartCaptureSession(string sessionName)
         {
-            MLInput.OnControllerButtonDown += OnButtonDown;
+            StartCapture();
+            this.sessionName = sessionName;
+
+        }
+
+        public void SetFocalPoint(Vector3 position)
+        {
+
+        }
+
+        /// <summary>
+        /// Once privileges have been granted, enable the camera and callbacks.
+        /// </summary>
+        public void StartCapture()
+        {
+            if (!_hasStarted)
+            {
+                lock (_cameraLockObject)
+                {
+                    EnableMLCamera();
+
+#if PLATFORM_LUMIN
+                    MLCamera.OnRawImageAvailable += OnCaptureRawImageComplete;
+#endif
+                }
+
+                _hasStarted = true;
+            }
+        }
+
+
+
+        /// <summary>
+        /// Handles the event of a new image getting captured.
+        /// </summary>
+        /// <param name="imageData">The raw data of the image.</param>
+        private void OnCaptureRawImageComplete(byte[] imageData)
+        {
+            lock (_cameraLockObject)
+            {
+                _isCapturing = false;
+            }
+            // between uninitalized captures and error texture
+            Texture2D texture = new Texture2D(Camera.main.pixelWidth, Camera.main.pixelHeight);
+            bool status = texture.LoadImage(imageData);
+
+            if (status)
+            {
+                //TODO: DO SOMETHING WITH TEXTURE   
+            }
+        }
+
+        /// <summary>
+        /// Worker function to call the API's Capture function
+        /// </summary>
+        private void CaptureThreadWorker()
+        {
+#if PLATFORM_LUMIN
+            lock (_cameraLockObject)
+            {
+                if (MLCamera.IsStarted && _isCameraConnected)
+                {
+                    MLResult result = MLCamera.CaptureRawImageAsync();
+                    if (result.IsOk)
+                    {
+                        _isCapturing = true;
+                    }
+                }
+            }
+#endif
         }
 
         public void StopCurrentSession()
         {
-            MLInput.OnControllerButtonDown -= OnButtonDown;
+            _isCapturing = false;
+            MLCamera.OnRawImageAvailable -= OnCaptureRawImageComplete;
         }
 
-        private void OnButtonDown(byte controllerId, MLInput.Controller.Button button)
-        {
-            if (MLInput.Controller.Button.HomeTap == button)  // go back to menu 
-            {
-
-            }
-        }
     }
 
 }

@@ -239,6 +239,7 @@ namespace CaptureSystem
         {
             return ndc.x <= 1 && ndc.x >= -1 && ndc.y <= 1 && ndc.y >= -1 && ndc.z <= 1 && ndc.z >= -1;
         }
+
     }
 
 }
