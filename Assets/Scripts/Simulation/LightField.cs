@@ -45,24 +45,27 @@ namespace Simulation
 
             sessionName = data.sessionName;
             simFocalPoint = data.focalPoint;
-            simSphereRadius = data.sphereRadius;
+            // simSphereRadius = data.sphereRadius;
             captures = new MLCaptureView[data.captures.Length];
-            SetMatrices(simSphereRadius, radius, simFocalPoint, newFocalPoint);
+
             realRadius = radius;
             realFocalPoint = newFocalPoint;
 
             for (int x = 0; x < captures.Length; x++)
             {
                 CaptureJSONData captureData = data.captures[x];
+
+                float simRadius = (simFocalPoint - captureData.transform.position).magnitude;
+
                 string pngPath = Loader.PathFromSessionName(data.sessionName) + "CaptureImages/" + captureData.imageFileName;
-                captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), TransformSimToReal(captureData.transform.position));
+                captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), TransformSimToReal(captureData.transform.position, CreateTransformMat(simRadius, radius, simFocalPoint, newFocalPoint)));
             }
 
             Debug.Log("successfully loaded light field with " + captures.Length + " captures");
 
         }
 
-        public void SetMatrices(float simRadius, float realRadius, Vector3 S, Vector3 R)
+        public Matrix4x4 CreateTransformMat(float simRadius, float realRadius, Vector3 S, Vector3 R)
         {
             transOriginRMat = new Matrix4x4(
                 new Vector4(1f, 0, 0, 0),
@@ -94,14 +97,14 @@ namespace Simulation
                    new Vector4(R.x, R.y, R.z, 1f)
             );
 
-            simulationToRealityMat = transToOriginRMatInv * scaleMat * transToOriginRMat * transOriginRMat;
+            return transToOriginRMatInv * scaleMat * transToOriginRMat * transOriginRMat;
 
         }
 
         // [TransformSimToReal] is the scaled position of simulation vector [S]
-        public Vector3 TransformSimToReal(Vector3 S)
+        public Vector3 TransformSimToReal(Vector3 S, Matrix4x4 simToReal)
         {
-            return OP.MultPoint(this.simulationToRealityMat, S);
+            return OP.MultPoint(simToReal, S);
         }
     }
 

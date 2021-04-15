@@ -14,6 +14,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using System.IO;
 using UnityEngine.XR.MagicLeap;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -54,12 +55,18 @@ namespace Simulation.Viewer
 
         private string sessionName;
 
-        private Vector3 focalPointPos;
+        public Vector3 focalPointPos;
+
+        public List<CaptureView> captureViews;
+
+        private int fileCounter;
 
 
 
         void Awake()
         {
+            fileCounter = 0;
+            captureViews = new List<CaptureView>();
             controller = GameObject.Find("Controller");
             CheckAllObjectsSet();
         }
@@ -131,10 +138,9 @@ namespace Simulation.Viewer
         }
 
 
-        public void StartCapturing(Vector3 pos)
+        public void printStatus()
         {
-            this.focalPointPos = pos;
-            //TODO: ACTUALLY IMPLEMENT CAPTURING
+            Debug.Log(captureViews.Count + " captures taken");
         }
 
         /// <summary>
@@ -227,6 +233,8 @@ namespace Simulation.Viewer
 #endif
                 }
 
+                Debug.Log("CAMERA SUCCESSFULLY ENABLED");
+
                 _hasStarted = true;
             }
         }
@@ -249,7 +257,16 @@ namespace Simulation.Viewer
 
             if (status)
             {
+
+                Transform cameraTransform = Camera.main.transform;
+
+                int fileCount = fileCounter;
+                fileCounter++;
+
+                // add to list of captures 
+                captureViews.Add(new Simulation.CaptureView("img_" + fileCount + ".png", texture, Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix, transform, cameraTransform.position));
                 //TODO: DO SOMETHING WITH TEXTURE   
+
             }
         }
 
@@ -277,6 +294,59 @@ namespace Simulation.Viewer
         {
             _isCapturing = false;
             MLCamera.OnRawImageAvailable -= OnCaptureRawImageComplete;
+        }
+
+
+        /*  Saves a capture session within Assets/SimulatorCaptureSessions/sessionName  */
+        public void SaveSession(string sessionName)
+        {
+            Debug.Log("START SAVING SESSION");
+            LightFieldJsonData fieldData = new LightFieldJsonData();
+            fieldData.sessionName = sessionName;
+            fieldData.focalPoint = focalPointPos;
+            fieldData.sphereRadius = 10; // THIS VALUE SHOULD NOT MATTER
+
+
+            // string outputPath = Application.dataPath + "/LightFieldOutput";
+            string outputPath = "/documents/C1/";
+            string fieldPath = outputPath + "/" + sessionName;
+            string imagePath = fieldPath + "/" + "CaptureImages";
+
+            System.IO.Directory.CreateDirectory(fieldPath);
+            System.IO.Directory.CreateDirectory(imagePath);
+
+            // AssetDatabase.CreateFolder(outputPath, sessionName);  NOTE: DISABLED FOR BUILD
+            // AssetDatabase.CreateFolder(fieldPath, "CaptureImages");
+            // AssetDatabase.Refresh();
+
+            CaptureJSONData[] captures = new CaptureJSONData[captureViews.Count];
+
+            //save all images into CaptureImages folder and collect capture json data objects
+            for (int x = 0; x < captureViews.Count; x++)
+            {
+                captures[x] = captureViews[x].jsonData;
+                SaveToFile(captureViews[x].texture, imagePath, captures[x].imageFileName);
+
+            }
+
+            fieldData.captures = captures;
+
+            string json = JsonUtility.ToJson(fieldData);
+
+            //save light field JSON 
+            File.WriteAllText(outputPath + "/" + sessionName + "/capture.json", json);
+
+            Debug.Log("Saving session " + sessionName + " complete!");
+        }
+
+        /// <summary>
+        /// Save texture as a PNG within assets/outputFolder/
+        /// </summary>
+        /// 
+        public void SaveToFile(Texture2D image, string outputFolder, string imageName)
+        {
+            byte[] bytes = image.EncodeToJPG();
+            File.WriteAllBytes(outputFolder + "/" + imageName, bytes);
         }
 
     }

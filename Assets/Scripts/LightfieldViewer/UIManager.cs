@@ -21,6 +21,7 @@ namespace Simulation.Viewer
         // Start is called before the first frame update
 
         public GameObject focalPointPrefab;
+        public GameObject smallDotPrefab;
         private MLInput.Controller controller;
         public GameObject HeadlockedCanvas;
         public GameObject controllerInput;
@@ -61,9 +62,12 @@ namespace Simulation.Viewer
 
             currentState = UIState.MENU;
 
+            Debug.Log("headlocked canvas " + HeadlockedCanvas.active);
+
             CheckAllObjectsSet();
 
             viewManagerObj.SetActive(false);
+            sessionNameText.text = "session1";
 
             CheckPermissions();
         }
@@ -86,6 +90,7 @@ namespace Simulation.Viewer
             _CheckObjSet(sessionNameText, "session name text mesh");
             _CheckObjSet(captureManager, "captureManager");
             _CheckObjSet(viewManager, "viewManager");
+            _CheckObjSet(smallDotPrefab, "smallDotPrefab");
         }
 
         private void OnButtonDown(byte controllerId, MLInput.Controller.Button button)
@@ -100,14 +105,27 @@ namespace Simulation.Viewer
                 if (currentState == UIState.CAPTURING)
                 {
                     //TODO stop capture, save session, return to MENU 
+                    Debug.Log("STOP CAPTURING");
+                    captureManager.SaveSession(sessionNameText.text);
                     captureManager.StopCurrentSession();
+
+                    RestoreMenu();
+                    CancelInvoke("CaptureImage");
                     currentState = UIState.MENU;
                 }
                 else if (currentState == UIState.VIEWING)
                 {
                     //TODO stop current view session with session name
-                    viewManager.StopCurrentSession();
+                    // viewManager.StopCurrentSession();
                     currentState = UIState.MENU;
+                }
+                else if (currentState == UIState.MENU)
+                {
+                    //START VIEWING 
+                    currentState = UIState.VIEWING;
+                    MLInput.Stop();
+                    MLInput.OnControllerButtonDown -= OnButtonDown;
+                    viewManagerObj.SetActive(true);
                 }
             }
         }
@@ -126,8 +144,10 @@ namespace Simulation.Viewer
                     {
                         if (hit.transform.gameObject.name == "StartButton")
                         {
+                            Debug.Log("DEACTIVATED HEADLOCKED CANVAS");
                             HeadlockedCanvas.SetActive(false);
-                            StartCaptureSession();
+                            currentState = UIState.CAPTURE_SETUP;
+
                         }
                     }
 
@@ -136,8 +156,10 @@ namespace Simulation.Viewer
                 {
                     Vector3 focalPos = controller.Position;
                     focalPoint = Instantiate(focalPointPrefab, focalPos, controller.Orientation);
-                    captureManager.StartCapturing(focalPoint.transform.position);
+                    captureManager.focalPointPos = focalPoint.transform.position;
                     currentState = UIState.CAPTURING;
+
+                    InvokeRepeating("CaptureImage", 2.0f, 2.0f);
                 }
                 // else if (currentState == UIState.CAPTURING)
                 // {
@@ -149,14 +171,41 @@ namespace Simulation.Viewer
                 // }
             }
 
+            if (currentState == UIState.CAPTURING)
+            {
 
+
+            }
+
+
+        }
+
+        void RestoreMenu()
+        {
+            HeadlockedCanvas.SetActive(true);
         }
 
 
         void StartCaptureSession()
         {
-            currentState = UIState.CAPTURE_SETUP;
             captureManager.StartCaptureSession(sessionNameText.text);
+        }
+
+        void CaptureImage()
+        {
+            //draw dot on unit sphere 
+            float SPHERE_RAD = 0.1f;
+            Vector3 camDir = Camera.main.transform.position - focalPoint.transform.position;
+            camDir.Normalize();
+            camDir = camDir * SPHERE_RAD;
+
+            Vector3 pointPos = focalPoint.transform.position + camDir;
+            Instantiate(smallDotPrefab, pointPos, Quaternion.identity);
+
+            //take an image and add to collection 
+            captureManager.TriggerAsyncCapture();
+
+            // captureManager.printStatus();
         }
 
 
@@ -230,6 +279,8 @@ namespace Simulation.Viewer
                 return;
             }
 #endif
+
+            StartCaptureSession();
             //TODO: call camera start capture to enable the camera and callbacks
 #if PLATFORM_LUMIN
             MLInput.OnControllerButtonDown += OnButtonDown;

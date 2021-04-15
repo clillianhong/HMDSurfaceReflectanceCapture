@@ -20,8 +20,10 @@ namespace Simulation.Utils
 
         public static string PathFromSessionName(string sessionName)
         {
-            return "Assets/LightFieldOutput/" + sessionName + "/";
+            return "/documents/C1/" + sessionName + "/";
         }
+
+
 
         public static Texture2D TextureFromPNG(string pngPath)
         {

@@ -74,7 +74,7 @@ namespace Simulation.Viewer
                         Debug.Log("Creating focal point and plane");
                         //create focal point and plane 
                         Vector3 focalPos = _controller.Position;
-                        focalPoint = Instantiate(focalPointPrefab, focalPos, _controller.Orientation);
+                        focalPoint = Instantiate(focalPointPrefab, focalPos, Quaternion.identity);
                         _projectorPlane = Instantiate(projectorPlanePrefab, focalPos, _controller.Orientation);
                         transitionState(LFManagerState.SETUP_RADIUS);
                         break;
