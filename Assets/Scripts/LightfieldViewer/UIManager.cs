@@ -20,13 +20,10 @@ namespace Simulation.Viewer
     {
         // Start is called before the first frame update
 
-        public GameObject focalPointPrefab;
-        public GameObject smallDotPrefab;
+        public GameObject sessionButtonPrefab;
         private MLInput.Controller controller;
         public GameObject HeadlockedCanvas;
         public GameObject controllerInput;
-
-        public TMP_Text sessionNameText;
 
         public LFCaptureManager captureManager;
         public LightFieldViewManager viewManager;
@@ -35,15 +32,9 @@ namespace Simulation.Viewer
         private bool _privilegesBeingRequested = false;
         private MLControllerConnectionHandlerBehavior _controllerConnectionHandler = null;
 
-        public GameObject focalPoint
-        {
-            get { return _focalPoint; }
-            set { _focalPoint = value; }
-        }
+        private HashSet<string> sessionNames;
+        public List<GameObject> sessionButtons;
 
-
-
-        private GameObject _focalPoint;
         enum UIState
         {
             MENU,
@@ -53,6 +44,9 @@ namespace Simulation.Viewer
         }
 
         private UIState currentState;
+
+        private int coolDown;
+
 
         void Start()
         {
@@ -67,10 +61,16 @@ namespace Simulation.Viewer
             CheckAllObjectsSet();
 
             viewManagerObj.SetActive(false);
-            sessionNameText.text = "session1";
+            coolDown = 0;
+            sessionNames = new HashSet<string>();
 
             CheckPermissions();
+
+            CreateSavedSessionButtons();
+
+
         }
+
 
         void _CheckObjSet(Object obj, string desc)
         {
@@ -84,100 +84,155 @@ namespace Simulation.Viewer
         void CheckAllObjectsSet()
         {
 
-            _CheckObjSet(focalPointPrefab, "focalPointPrefab");
             _CheckObjSet(HeadlockedCanvas, "headlocked canvas");
             _CheckObjSet(controllerInput, "statusText");
-            _CheckObjSet(sessionNameText, "session name text mesh");
             _CheckObjSet(captureManager, "captureManager");
             _CheckObjSet(viewManager, "viewManager");
-            _CheckObjSet(smallDotPrefab, "smallDotPrefab");
+            _CheckObjSet(sessionButtonPrefab, "sessionButtonPrefab");
         }
+
+        void CreateSavedSessionButtons()
+        {
+            int numSessions = captureManager.sessionCounter - 1;
+            Vector3 currentButtonPos;
+            float heightDiff = 0.02f;
+            float localScale = 0.001f;
+
+            if (sessionButtons.Count == 0)
+            {
+                currentButtonPos = HeadlockedCanvas.transform.position;
+                currentButtonPos.y -= 0.01f;
+            }
+            else
+            {
+                currentButtonPos = sessionButtons[sessionButtons.Count - 1].transform.position;
+                currentButtonPos.y -= heightDiff;
+                localScale = 1.0f;
+            }
+
+            Debug.Log("Creating saved session " + numSessions);
+
+            for (int x = sessionButtons.Count + 1; x <= numSessions; x++)
+            {
+                string name = "session" + x;
+                GameObject button = Instantiate(sessionButtonPrefab, currentButtonPos, HeadlockedCanvas.transform.rotation);
+                button.name = name;
+                button.transform.localScale = button.transform.localScale * localScale;
+                button.GetComponentInChildren<TMP_Text>().text = name;
+                button.transform.SetParent(HeadlockedCanvas.transform);
+                Debug.Log("button created at " + currentButtonPos);
+                currentButtonPos.y -= heightDiff;
+                sessionNames.Add(name);
+                sessionButtons.Add(button);
+            }
+        }
+
 
         private void OnButtonDown(byte controllerId, MLInput.Controller.Button button)
         {
-            if (MLInput.Controller.Button.Bumper == button)  // go back to menu 
+            if (button == MLInput.Controller.Button.HomeTap)
             {
-                // if (currentState == UIState.CAPTURE_SETUP)
-                // {
-
-
-                // }
-                if (currentState == UIState.CAPTURING)
+                if (currentState != UIState.MENU)
                 {
-                    //TODO stop capture, save session, return to MENU 
-                    Debug.Log("STOP CAPTURING");
-                    captureManager.SaveSession(sessionNameText.text);
-                    captureManager.StopCurrentSession();
+                    TransitionState(UIState.MENU);
+                }
 
-                    RestoreMenu();
-                    CancelInvoke("CaptureImage");
-                    currentState = UIState.MENU;
-                }
-                else if (currentState == UIState.VIEWING)
-                {
-                    //TODO stop current view session with session name
-                    // viewManager.StopCurrentSession();
-                    currentState = UIState.MENU;
-                }
-                else if (currentState == UIState.MENU)
-                {
-                    //START VIEWING 
-                    currentState = UIState.VIEWING;
-                    MLInput.Stop();
-                    MLInput.OnControllerButtonDown -= OnButtonDown;
-                    viewManagerObj.SetActive(true);
-                }
             }
+            else if (MLInput.Controller.Button.Bumper == button)  // go back to menu 
+            {
+                if (currentState == UIState.VIEWING && coolDown == 0)
+                {
+                    coolDown = 50;
+                    viewManager.OnButtonDown(controllerId, button);
+                }
+
+            }
+
         }
+
 
 
         // Update is called once per frame
         void Update()
         {
+            if (coolDown > 0)
+            {
+                coolDown--;
+            }
+
             if (controller.TriggerValue > 0.5f)
             {
                 if (currentState == UIState.MENU)
                 {
-
                     RaycastHit hit;
                     if (Physics.Raycast(controllerInput.transform.position, controllerInput.transform.forward, out hit))
                     {
+                        Debug.Log("button hit " + hit.transform.gameObject.name);
                         if (hit.transform.gameObject.name == "StartButton")
                         {
-                            Debug.Log("DEACTIVATED HEADLOCKED CANVAS");
-                            HeadlockedCanvas.SetActive(false);
-                            currentState = UIState.CAPTURE_SETUP;
-
+                            TransitionState(UIState.CAPTURE_SETUP);
+                            coolDown = 100;
                         }
+                        else if (sessionNames.Contains(hit.transform.gameObject.name))
+                        {
+                            Debug.Log("helloooo " + hit.transform.gameObject.name);
+                            viewManager.lightFieldName = hit.transform.gameObject.name;
+                            TransitionState(UIState.VIEWING);
+                            coolDown = 100;
+                        }
+
+                    }
+                }
+                else if (coolDown == 0 && currentState == UIState.CAPTURE_SETUP) // create focal point! 
+                {
+                    TransitionState(UIState.CAPTURING);
+                }
+            }
+
+        }
+
+        void TransitionState(UIState newState)
+        {
+            switch (newState)
+            {
+                case UIState.MENU:
+                    if (currentState == UIState.CAPTURING)
+                    {
+                        Debug.Log("Start saving");
+                        captureManager.SaveSession();
+                        captureManager.StopCurrentSession();
+
+                        CancelInvoke("CaptureImage");
+
+                        captureManager.UpdateSessionNum();
+                        CreateSavedSessionButtons();
+                        Debug.Log("Finished creating new session buttons");
+
+                    }
+                    else if (currentState == UIState.VIEWING)
+                    {
+                        viewManager.DeactivateSession();
                     }
 
-                }
-                else if (currentState == UIState.CAPTURE_SETUP) // create focal point! 
-                {
-                    Vector3 focalPos = controller.Position;
-                    focalPoint = Instantiate(focalPointPrefab, focalPos, controller.Orientation);
-                    captureManager.focalPointPos = focalPoint.transform.position;
-                    currentState = UIState.CAPTURING;
+                    HeadlockedCanvas.SetActive(true);
 
-                    InvokeRepeating("CaptureImage", 2.0f, 2.0f);
-                }
-                // else if (currentState == UIState.CAPTURING)
-                // {
+                    break;
+                case UIState.CAPTURE_SETUP:
+                    HeadlockedCanvas.SetActive(false);
 
-                // }
-                // else if (currentState == UIState.VIEWING)
-                // {
-
-                // }
-            }
-
-            if (currentState == UIState.CAPTURING)
-            {
-
+                    break;
+                case UIState.CAPTURING:
+                    captureManager.SetFocalPoint(controller.Position);
+                    InvokeRepeating("CaptureImage", 2.0f, 3.0f);
+                    break;
+                case UIState.VIEWING:
+                    HeadlockedCanvas.SetActive(false);
+                    viewManagerObj.SetActive(true);
+                    break;
 
             }
 
-
+            currentState = newState;
         }
 
         void RestoreMenu()
@@ -188,19 +243,13 @@ namespace Simulation.Viewer
 
         void StartCaptureSession()
         {
-            captureManager.StartCaptureSession(sessionNameText.text);
+            captureManager.StartCaptureSession();
         }
 
         void CaptureImage()
         {
             //draw dot on unit sphere 
-            float SPHERE_RAD = 0.1f;
-            Vector3 camDir = Camera.main.transform.position - focalPoint.transform.position;
-            camDir.Normalize();
-            camDir = camDir * SPHERE_RAD;
 
-            Vector3 pointPos = focalPoint.transform.position + camDir;
-            Instantiate(smallDotPrefab, pointPos, Quaternion.identity);
 
             //take an image and add to collection 
             captureManager.TriggerAsyncCapture();

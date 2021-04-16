@@ -30,6 +30,10 @@ namespace Simulation.Viewer
 
         //ML remote controller
 
+
+        public GameObject focalPointPrefab;
+        public GameObject smallDotPrefab;
+
         private GameObject controller;
         private bool _isCameraConnected = false;
 
@@ -53,13 +57,20 @@ namespace Simulation.Viewer
         /// </summary>
         private object _cameraLockObject = new object();
 
-        private string sessionName;
-
-        public Vector3 focalPointPos;
-
         public List<CaptureView> captureViews;
 
         private int fileCounter;
+        public int sessionCounter;
+
+        private string APP_ROOT_PATH = "/documents/C1/";
+        //capture focalPoint
+        public GameObject focalPoint
+        {
+            get { return _focalPoint; }
+            set { _focalPoint = value; }
+        }
+
+        private GameObject _focalPoint;
 
 
 
@@ -69,6 +80,20 @@ namespace Simulation.Viewer
             captureViews = new List<CaptureView>();
             controller = GameObject.Find("Controller");
             CheckAllObjectsSet();
+            sessionCounter = 0;
+            UpdateSessionNum();
+        }
+
+        public void UpdateSessionNum()
+        {
+            DirectoryInfo dir = new DirectoryInfo(APP_ROOT_PATH);
+            sessionCounter = dir.GetDirectories().Length + 1;
+            Debug.Log("sessionCounter !!!!!!!!!! " + sessionCounter);
+        }
+
+        void Start()
+        {
+
         }
 
 
@@ -85,6 +110,10 @@ namespace Simulation.Viewer
         void CheckAllObjectsSet()
         {
             _CheckObjSet(controller, "controller");
+
+            _CheckObjSet(smallDotPrefab, "smallDotPrefab");
+
+            _CheckObjSet(focalPointPrefab, "focalPointPrefab");
         }
 
 
@@ -205,16 +234,15 @@ namespace Simulation.Viewer
 #endif
         }
 
-        public void StartCaptureSession(string sessionName)
+        public void StartCaptureSession()
         {
             StartCapture();
-            this.sessionName = sessionName;
 
         }
 
         public void SetFocalPoint(Vector3 position)
         {
-
+            focalPoint = Instantiate(focalPointPrefab, position, Quaternion.identity);
         }
 
         /// <summary>
@@ -263,9 +291,29 @@ namespace Simulation.Viewer
                 int fileCount = fileCounter;
                 fileCounter++;
 
+                string imageFileName = "img_" + fileCount + ".png";
+
+                CaptureJSONData jsonData = new CaptureJSONData();
+                jsonData.imageFileName = imageFileName;
+                jsonData.transform = new TransformJSONData();
+                jsonData.transform.forward = cameraTransform.forward;
+                jsonData.transform.up = cameraTransform.up;
+                jsonData.transform.right = cameraTransform.right;
+                jsonData.transform.position = cameraTransform.position;
+                Debug.Log("captured position!! " + cameraTransform.position);
+                jsonData.transform.projMatrix = Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix;
+
                 // add to list of captures 
-                captureViews.Add(new Simulation.CaptureView("img_" + fileCount + ".png", texture, Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix, transform, cameraTransform.position));
+                captureViews.Add(new Simulation.CaptureView(imageFileName, texture, Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix, jsonData));
                 //TODO: DO SOMETHING WITH TEXTURE   
+                float SPHERE_RAD = 0.1f;
+                Vector3 camDir = Camera.main.transform.position - focalPoint.transform.position;
+                camDir.Normalize();
+                camDir = camDir * SPHERE_RAD;
+
+                Vector3 pointPos = focalPoint.transform.position + camDir;
+                GameObject dot = Instantiate(smallDotPrefab, pointPos, Quaternion.identity);
+                dot.transform.SetParent(focalPoint.transform);
 
             }
         }
@@ -293,29 +341,32 @@ namespace Simulation.Viewer
         public void StopCurrentSession()
         {
             _isCapturing = false;
+            focalPoint.SetActive(false);
+            Destroy(focalPoint);
             MLCamera.OnRawImageAvailable -= OnCaptureRawImageComplete;
         }
 
 
         /*  Saves a capture session within Assets/SimulatorCaptureSessions/sessionName  */
-        public void SaveSession(string sessionName)
+        public void SaveSession()
         {
             Debug.Log("START SAVING SESSION");
             LightFieldJsonData fieldData = new LightFieldJsonData();
-            fieldData.sessionName = sessionName;
-            fieldData.focalPoint = focalPointPos;
+            fieldData.sessionName = "session" + sessionCounter;
+            sessionCounter++;
+            fieldData.focalPoint = focalPoint.transform.position;
             fieldData.sphereRadius = 10; // THIS VALUE SHOULD NOT MATTER
 
 
             // string outputPath = Application.dataPath + "/LightFieldOutput";
-            string outputPath = "/documents/C1/";
-            string fieldPath = outputPath + "/" + sessionName;
+
+            string fieldPath = APP_ROOT_PATH + "/" + fieldData.sessionName;
             string imagePath = fieldPath + "/" + "CaptureImages";
 
             System.IO.Directory.CreateDirectory(fieldPath);
             System.IO.Directory.CreateDirectory(imagePath);
 
-            // AssetDatabase.CreateFolder(outputPath, sessionName);  NOTE: DISABLED FOR BUILD
+            // AssetDatabase.CreateFolder(APP_ROOT_PATH, sessionName);  NOTE: DISABLED FOR BUILD
             // AssetDatabase.CreateFolder(fieldPath, "CaptureImages");
             // AssetDatabase.Refresh();
 
@@ -325,6 +376,7 @@ namespace Simulation.Viewer
             for (int x = 0; x < captureViews.Count; x++)
             {
                 captures[x] = captureViews[x].jsonData;
+                Debug.Log("saving capture " + captures[x].transform.position);
                 SaveToFile(captureViews[x].texture, imagePath, captures[x].imageFileName);
 
             }
@@ -334,9 +386,9 @@ namespace Simulation.Viewer
             string json = JsonUtility.ToJson(fieldData);
 
             //save light field JSON 
-            File.WriteAllText(outputPath + "/" + sessionName + "/capture.json", json);
+            File.WriteAllText(APP_ROOT_PATH + "/" + fieldData.sessionName + "/capture.json", json);
 
-            Debug.Log("Saving session " + sessionName + " complete!");
+            Debug.Log("Saving session " + fieldData.sessionName + " complete!");
         }
 
         /// <summary>

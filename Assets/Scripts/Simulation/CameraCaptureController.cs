@@ -87,7 +87,7 @@ namespace Simulation
             fileCounter++;
 
             // add to list of captures 
-            collectionManager.captureViews.Add(new Simulation.CaptureView("img_" + fileCount + ".png", image, _camera.projectionMatrix * _camera.worldToCameraMatrix, transform, cameraTransform.position));
+            // collectionManager.captureViews.Add(new Simulation.CaptureView("img_" + fileCount + ".png", image, _camera.projectionMatrix * _camera.worldToCameraMatrix, transform, cameraTransform.position));
 
             if (renderCapture)
             {

@@ -34,6 +34,8 @@ namespace Simulation.Viewer
 
         private GameObject _projectorPlane;
 
+        private GameObject radiusLine;
+
         private LightField _lightField;
 
         private float radius;
@@ -51,20 +53,22 @@ namespace Simulation.Viewer
         {
 
             //start MLInput API 
-            MLInput.Start();
-            //assign callback
-            MLInput.OnControllerButtonDown += OnButtonDown;
-            MLInput.OnControllerButtonUp += OnButtonUp;
+            // MLInput.Start();
+            // //assign callback
+            // MLInput.OnControllerButtonDown += OnButtonDown;
+            // MLInput.OnControllerButtonUp += OnButtonUp;
+            _camera = Camera.main;
             _controller = MLInput.GetController(MLInput.Hand.Left);
             _currentState = LFManagerState.SETUP_FOCAL;
-            Debug.Log("starting");
-
-            _camera = Camera.main;
-            InvokeRepeating("UpdateProjectorPlane", 2.0f, 0.3f);
 
         }
 
-        void OnButtonDown(byte controllerId, MLInput.Controller.Button button)
+        void OnEnable()
+        {
+            InvokeRepeating("UpdateProjectorPlane", 2.0f, 0.3f);
+        }
+
+        public void OnButtonDown(byte controllerId, MLInput.Controller.Button button)
         {
             if (button == MLInput.Controller.Button.Bumper)
             {
@@ -82,18 +86,19 @@ namespace Simulation.Viewer
                         Debug.Log("establishing radius");
 
                         //create indicator for radius 
-                        var line = new GameObject("Line").AddComponent<LineRenderer>();
-                        line.startColor = Color.black;
-                        line.endColor = Color.black;
-                        line.startWidth = 0.005f;
-                        line.endWidth = 0.005f;
-                        line.positionCount = 2;
-                        line.useWorldSpace = true;
+                        radiusLine = new GameObject("Line");
+                        var lineRend = radiusLine.AddComponent<LineRenderer>();
+                        lineRend.startColor = Color.black;
+                        lineRend.endColor = Color.black;
+                        lineRend.startWidth = 0.005f;
+                        lineRend.endWidth = 0.005f;
+                        lineRend.positionCount = 2;
+                        lineRend.useWorldSpace = true;
 
                         Vector3 radiusEnd = _controller.Position;
                         radius = Vector3.Distance(radiusEnd, focalPoint.transform.position);
-                        line.SetPosition(0, focalPoint.transform.position);
-                        line.SetPosition(1, radiusEnd);
+                        lineRend.SetPosition(0, focalPoint.transform.position);
+                        lineRend.SetPosition(1, radiusEnd);
 
                         //load light field with transformations
                         if (preloadSession)
@@ -104,6 +109,7 @@ namespace Simulation.Viewer
                             for (int i = 0; i < _lightField.captures.Length; i++)
                             {
                                 MLCaptureView captureView = _lightField.captures[i];
+
                                 captureViewObjs[i] = createCapturePreviewObject(captureView);
 
                             }
@@ -116,6 +122,20 @@ namespace Simulation.Viewer
                 }
 
             }
+
+        }
+
+        //destroy current game objects of view session
+        public void DeactivateSession()
+        {
+            Destroy(focalPoint);
+            Destroy(_projectorPlane);
+            Destroy(radiusLine);
+            foreach (var cap in captureViewObjs)
+            {
+                Destroy(cap);
+            }
+            CancelInvoke("UpdateProjectorPlane");
         }
 
         GameObject createCapturePreviewObject(MLCaptureView captureView)
@@ -174,10 +194,12 @@ namespace Simulation.Viewer
 
             MLCaptureView leastView = new MLCaptureView();
             float minDist = float.PositiveInfinity;
+            // Debug.Log("my position " + position);
 
             foreach (MLCaptureView view in _lightField.captures)
             {
                 float curDist = Vector3.Distance(position, view.realityCapturePosition);
+
 
                 if (minDist > curDist)
                 {
@@ -191,9 +213,9 @@ namespace Simulation.Viewer
 
         void OnDestroy()
         {
-            MLInput.OnControllerButtonDown -= OnButtonDown;
-            MLInput.OnControllerButtonUp -= OnButtonUp;
-            MLInput.Stop();
+            // MLInput.OnControllerButtonDown -= OnButtonDown;
+            // MLInput.OnControllerButtonUp -= OnButtonUp;
+            // MLInput.Stop();
         }
 
 
@@ -206,8 +228,8 @@ namespace Simulation.Viewer
 
         public void StopCurrentSession()
         {
-            MLInput.OnControllerButtonDown -= OnButtonDown;
-            MLInput.OnControllerButtonUp -= OnButtonUp;
+            // MLInput.OnControllerButtonDown -= OnButtonDown;
+            // MLInput.OnControllerButtonUp -= OnButtonUp;
         }
     }
 

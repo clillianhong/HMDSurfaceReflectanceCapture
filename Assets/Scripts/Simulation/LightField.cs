@@ -45,20 +45,25 @@ namespace Simulation
 
             sessionName = data.sessionName;
             simFocalPoint = data.focalPoint;
-            // simSphereRadius = data.sphereRadius;
+            simSphereRadius = data.sphereRadius;
             captures = new MLCaptureView[data.captures.Length];
 
             realRadius = radius;
             realFocalPoint = newFocalPoint;
+            Matrix4x4 simToRealMat = CreateTransformMat(simSphereRadius, radius, simFocalPoint, newFocalPoint);
 
             for (int x = 0; x < captures.Length; x++)
             {
                 CaptureJSONData captureData = data.captures[x];
+                Debug.Log("loaded position " + captureData.transform.position);
 
                 float simRadius = (simFocalPoint - captureData.transform.position).magnitude;
+                Debug.Log("simRadius " + simRadius);
+                Debug.Log("real radius " + realRadius);
 
                 string pngPath = Loader.PathFromSessionName(data.sessionName) + "CaptureImages/" + captureData.imageFileName;
                 captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), TransformSimToReal(captureData.transform.position, CreateTransformMat(simRadius, radius, simFocalPoint, newFocalPoint)));
+                Debug.Log("reality position " + captures[x].realityCapturePosition);
             }
 
             Debug.Log("successfully loaded light field with " + captures.Length + " captures");
@@ -117,7 +122,6 @@ namespace Simulation
         public float sphereRadius;
         public CaptureJSONData[] captures;
 
-
     }
 
     public struct CaptureView
@@ -132,20 +136,13 @@ namespace Simulation
 
 
         //initialize when capturing in simulation
-        public CaptureView(string imageFileName, Texture2D tex, Matrix4x4 vpm, Transform trans, Vector3 pos)
+        public CaptureView(string imageFileName, Texture2D tex, Matrix4x4 vpm, CaptureJSONData data)
         {
             id = imageFileName;
             texture = tex;
             viewProjMatrix = vpm;
-            capturePosition = pos;
-            jsonData = new CaptureJSONData();
-            jsonData.imageFileName = imageFileName;
-            jsonData.transform = new TransformJSONData();
-            jsonData.transform.forward = trans.forward;
-            jsonData.transform.up = trans.up;
-            jsonData.transform.right = trans.right;
-            jsonData.transform.position = trans.position;
-            jsonData.transform.projMatrix = vpm;
+            capturePosition = data.transform.position;
+            jsonData = data;
         }
 
 
