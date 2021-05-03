@@ -45,11 +45,11 @@ namespace Simulation
 
             sessionName = data.sessionName;
             simFocalPoint = data.focalPoint;
-            simSphereRadius = data.sphereRadius;
             captures = new MLCaptureView[data.captures.Length];
 
             realRadius = radius;
             realFocalPoint = newFocalPoint;
+
             Matrix4x4 simToRealMat = CreateTransformMat(simSphereRadius, radius, simFocalPoint, newFocalPoint);
 
             for (int x = 0; x < captures.Length; x++)
@@ -62,7 +62,7 @@ namespace Simulation
                 Debug.Log("real radius " + realRadius);
 
                 string pngPath = Loader.PathFromSessionName(data.sessionName) + "CaptureImages/" + captureData.imageFileName;
-                captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), TransformSimToReal(captureData.transform.position, CreateTransformMat(simRadius, radius, simFocalPoint, newFocalPoint)));
+                captures[x] = new MLCaptureView(captureData, Loader.TextureFromPNG(pngPath), CreateTransformMat(simRadius, realRadius, simFocalPoint, newFocalPoint));
                 Debug.Log("reality position " + captures[x].realityCapturePosition);
             }
 
@@ -70,6 +70,9 @@ namespace Simulation
 
         }
 
+
+        /// S -> simulation focal point 
+        /// R -> real focal point 
         public Matrix4x4 CreateTransformMat(float simRadius, float realRadius, Vector3 S, Vector3 R)
         {
             transOriginRMat = new Matrix4x4(
@@ -160,8 +163,10 @@ namespace Simulation
 
         public TransformJSONData transformData;
 
+        public Matrix4x4 realWorldToCaptureMat;
+
         //initialize with json data object
-        public MLCaptureView(CaptureJSONData jSONData, Texture2D tex, Vector3 realityPosition)
+        public MLCaptureView(CaptureJSONData jSONData, Texture2D tex, Matrix4x4 worldToCap)
         {
             id = jSONData.imageFileName;
             texture = tex;
@@ -170,7 +175,8 @@ namespace Simulation
 
             texture = tex;
             simulationCapturePosition = jSONData.transform.position;
-            realityCapturePosition = realityPosition;
+            realityCapturePosition = OP.MultPoint(worldToCap, jSONData.transform.position);
+            realWorldToCaptureMat = worldToCap;
 
         }
 

@@ -1,4 +1,4 @@
-﻿// %BANNER_BEGIN%
+// %BANNER_BEGIN%
 // ---------------------------------------------------------------------
 // %COPYRIGHT_BEGIN%
 //
@@ -29,8 +29,7 @@ namespace Simulation.Viewer
     {
 
         //ML remote controller
-
-
+        public double captureAngle; //smallest angle allowed between two captures 
         public GameObject focalPointPrefab;
         public GameObject smallDotPrefab;
 
@@ -72,13 +71,36 @@ namespace Simulation.Viewer
 
         private GameObject _focalPoint;
 
+        private LinkedList<Vector3> capturePositions;
+
+        private bool captureAngleGood; //true if far away enough from nearest capture, false otherwise
+
+        public bool CaptureAngleGood
+        {
+            get
+            {
+                return captureAngleGood;
+            }
+        }
+
+        public bool ActivelyCapturing
+        {
+            get
+            {
+                return !(_captureThread == null || (!_captureThread.IsAlive));
+            }
+        }
+
+
 
 
         void Awake()
         {
             fileCounter = 0;
             captureViews = new List<CaptureView>();
+            capturePositions = new LinkedList<Vector3>();
             controller = GameObject.Find("Controller");
+            captureAngleGood = true;
             CheckAllObjectsSet();
             sessionCounter = 0;
             UpdateSessionNum();
@@ -114,6 +136,13 @@ namespace Simulation.Viewer
             _CheckObjSet(smallDotPrefab, "smallDotPrefab");
 
             _CheckObjSet(focalPointPrefab, "focalPointPrefab");
+
+            if (captureAngle <= 0)
+            {
+                Debug.LogError("Error: captureAngle is not set, disabling script.");
+                enabled = false;
+                return;
+            }
         }
 
 
@@ -172,14 +201,51 @@ namespace Simulation.Viewer
             Debug.Log(captureViews.Count + " captures taken");
         }
 
+
+
         /// <summary>
-        /// Captures a still image using the device's camera and returns
-        /// the data path where it is saved.
+        /// Checks if the camera is captureAngle away from all current Captures before triggering capture thread 
+        /// </summary>
+        public void CheckCaptureConditions()
+        {
+
+            Vector3 camPos = Camera.main.transform.position;
+
+            LinkedListNode<Vector3> currCapturePos = capturePositions.First;
+
+            while (currCapturePos != null)
+            {
+                Vector3 toCam = camPos - focalPoint.transform.position;
+                Vector3 toCap = currCapturePos.Value - focalPoint.transform.position;
+                double theta = Math.Acos(Vector3.Dot(toCam, toCap) / (toCam.magnitude * toCap.magnitude)) / Math.PI * 180;
+                if (theta < captureAngle)
+                {
+                    //found closest point -> remove and move to front of list, return without taking capture \
+                    Debug.Log("Capture found that is too close!");
+                    capturePositions.AddFirst(new LinkedListNode<Vector3>(currCapturePos.Value));
+                    capturePositions.Remove(currCapturePos);
+                    captureAngleGood = false;
+                    return;
+                }
+                currCapturePos = currCapturePos.Next;
+            }
+            captureAngleGood = true;
+            // if all captures are more than captureAngle away, trigger capture
+            TriggerAsyncCapture();
+
+        }
+
+
+        /// <summary>
+        /// Starts thread to capture a still image using the device's camera 
         /// </summary>
         public void TriggerAsyncCapture()
         {
-            if (_captureThread == null || (!_captureThread.IsAlive))
+
+
+            if (!ActivelyCapturing)
             {
+                Debug.Log("Triggering async image capture!");
                 ThreadStart captureThreadStart = new ThreadStart(CaptureThreadWorker);
                 _captureThread = new Thread(captureThreadStart);
                 _captureThread.Start();
@@ -188,7 +254,12 @@ namespace Simulation.Viewer
             {
                 Debug.Log("Previous thread has not finished, unable to begin a new capture just yet.");
             }
+            return;
         }
+
+
+
+
 
         /// <summary>
         /// Connects the MLCamera component and instantiates a new instance
@@ -267,6 +338,11 @@ namespace Simulation.Viewer
             }
         }
 
+        public void SetFocalPointColor(Color color)
+        {
+            focalPoint.GetComponent<Renderer>().material.color = color;
+        }
+
 
 
         /// <summary>
@@ -304,6 +380,7 @@ namespace Simulation.Viewer
                 jsonData.transform.projMatrix = Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix;
 
                 // add to list of captures 
+                capturePositions.AddFirst(jsonData.transform.position);
                 captureViews.Add(new Simulation.CaptureView(imageFileName, texture, Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix, jsonData));
                 //TODO: DO SOMETHING WITH TEXTURE   
                 float SPHERE_RAD = 0.1f;

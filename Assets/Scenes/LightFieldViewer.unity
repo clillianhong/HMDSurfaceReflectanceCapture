@@ -2058,6 +2058,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e91dae8e1359b1948b62dada43a9de48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  captureAngle: 5
   focalPointPrefab: {fileID: 4016720850342458225, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
     type: 3}
   smallDotPrefab: {fileID: 5054246646726864911, guid: 909636015ead9974385f337fda5a0a3e,
@@ -2248,6 +2249,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   focalPointPrefab: {fileID: 4016720850342458225, guid: 4cd1a87d9d36e474eb3cf67195d4296e,
+    type: 3}
+  projCameraPrefab: {fileID: 8818878719408816315, guid: b921a5a74f266814084dd16d7d1e4407,
     type: 3}
   lightFieldName: session1
   projectorPlanePrefab: {fileID: 5599862325618540427, guid: 43aa536bf5e178a4f83781ac4a0ad540,
