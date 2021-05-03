@@ -211,7 +211,7 @@ namespace Simulation.Viewer
 
         void UpdateProjectorPlane()
         {
-            // _projectorPlane.transform.LookAt = 
+
             _projectorPlane.transform.up = -_camera.transform.forward;
 
             if (this.captureViewObjs != null)
@@ -219,22 +219,13 @@ namespace Simulation.Viewer
                 int K = 3;
                 MLCaptureView[] captures = this.FindNearestCapture(K, _camera.transform.position);
 
-
-
                 for (int i = 0; i < K; i++)
                 {
                     MLCaptureView capture = captures[i];
                     capture.texture.wrapMode = TextureWrapMode.Clamp;
-                    var captureCam = GameObject.Instantiate(projCameraPrefab, capture.realityCapturePosition, Quaternion.identity);
-                    var camComponent = captureCam.GetComponent<Camera>();
-                    camComponent.transform.LookAt(focalPoint.transform.position);
-                    // Debug.Log("capture cam " + camComponent.worldToCameraMatrix);
-                    // Debug.Log("real cam " + _camera.worldToCameraMatrix);
 
                     _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetTexture("_ProjTex" + (i + 1), capture.texture);
-                    _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetMatrix("projectM" + (i + 1), _camera.projectionMatrix * camComponent.worldToCameraMatrix);
-
-                    GameObject.Destroy(captureCam);
+                    _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetMatrix("projectM" + (i + 1), _camera.projectionMatrix * capture.worldToCameraMatrix);
                 }
 
                 _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetMatrix("projectM", _camera.projectionMatrix * _camera.worldToCameraMatrix);
@@ -253,25 +244,11 @@ namespace Simulation.Viewer
                 k = _lightField.captures.Length;
             }
 
-            // List<MLCaptureView> closestViews = new List<MLCaptureView>();
-
-            float minDist = float.PositiveInfinity;
-            // Debug.Log("my position " + position);
             var closestViews = new SortedSet<MLCaptureView>(new ByEuclidean(position));
-
 
             foreach (MLCaptureView view in _lightField.captures)
             {
-
                 closestViews.Add(view);
-                // float curDist = Vector3.Distance(position, view.realityCapturePosition);
-
-
-                // if (minDist > curDist)
-                // {
-                //     minDist = curDist;
-                //     closestViews.Add(view);
-                // }
             }
 
             MLCaptureView[] leastViews = new MLCaptureView[k];

@@ -163,10 +163,10 @@ namespace Simulation
 
         public TransformJSONData transformData;
 
-        public Matrix4x4 realWorldToCaptureMat;
+        public Matrix4x4 worldToCameraMatrix;
 
         //initialize with json data object
-        public MLCaptureView(CaptureJSONData jSONData, Texture2D tex, Matrix4x4 worldToCap)
+        public MLCaptureView(CaptureJSONData jSONData, Texture2D tex, Matrix4x4 worldToCap, Vector3 originalFocalPointPos, GameObject camPrefab)
         {
             id = jSONData.imageFileName;
             texture = tex;
@@ -176,7 +176,11 @@ namespace Simulation
             texture = tex;
             simulationCapturePosition = jSONData.transform.position;
             realityCapturePosition = OP.MultPoint(worldToCap, jSONData.transform.position);
-            realWorldToCaptureMat = worldToCap;
+            var captureCam = GameObject.Instantiate(camPrefab, realityCapturePosition, Quaternion.identity);
+            var camComponent = captureCam.GetComponent<Camera>();
+            camComponent.transform.LookAt(originalFocalPointPos);
+            worldToCameraMatrix = camComponent.cameraToWorldMatrix;
+            GameObject.Destroy(captureCam);
 
         }
 
