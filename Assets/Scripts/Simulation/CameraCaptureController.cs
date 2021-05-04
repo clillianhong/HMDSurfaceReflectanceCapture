@@ -58,7 +58,6 @@ namespace Simulation
                 if (Input.GetKeyDown(screenshotKey))
                 {
                     CaptureAndDisplay(true);
-
                 }
             }
 
@@ -68,7 +67,6 @@ namespace Simulation
         public void CaptureAndDisplay(bool renderCapture)
         {
             //get current camera image 
-
             RenderTexture activeRenderTexture = RenderTexture.active;
             RenderTexture.active = _camera.targetTexture;
 
@@ -78,20 +76,12 @@ namespace Simulation
             image.ReadPixels(new Rect(0, 0, _camera.targetTexture.width, _camera.targetTexture.height), 0, 0);
             image.Apply();
             RenderTexture.active = activeRenderTexture;
-
-            //get current camera pose 
-
             Transform cameraTransform = _camera.gameObject.transform;
-
             int fileCount = fileCounter;
             fileCounter++;
 
-            // add to list of captures 
-            // collectionManager.captureViews.Add(new Simulation.CaptureView("img_" + fileCount + ".png", image, _camera.projectionMatrix * _camera.worldToCameraMatrix, transform, cameraTransform.position));
-
             if (renderCapture)
             {
-
                 createCapturePoseLabel(cameraTransform, image, fileCount);
             }
         }
@@ -106,7 +96,7 @@ namespace Simulation
         /// <summary>
         /// Save texture as a PNG within assets/outputFolder/
         /// </summary>
-        /// 
+
         public void SaveToFile(Texture2D image, string outputFolder, string imageName)
         {
             byte[] bytes = image.EncodeToJPG();
@@ -145,16 +135,9 @@ namespace Simulation
             fieldData.focalPoint = viewManager.focalPoint.position;
             fieldData.sphereRadius = viewManager.distance;
 
-
-            // string outputPath = Application.dataPath + "/LightFieldOutput";
             string outputPath = "Assets/LightFieldOutput";
             string fieldPath = outputPath + "/" + sessionName;
             string imagePath = fieldPath + "/" + "CaptureImages";
-
-            // AssetDatabase.CreateFolder(outputPath, sessionName);  NOTE: DISABLED FOR BUILD
-            // AssetDatabase.CreateFolder(fieldPath, "CaptureImages");
-            // AssetDatabase.Refresh();
-
             CaptureJSONData[] captures = new CaptureJSONData[collectionManager.captureViews.Count];
 
             //save all images into CaptureImages folder and collect capture json data objects
@@ -162,19 +145,15 @@ namespace Simulation
             {
                 captures[x] = collectionManager.captureViews[x].jsonData;
                 SaveToFile(collectionManager.captureViews[x].texture, imagePath, captures[x].imageFileName);
-
             }
 
             fieldData.captures = captures;
-
             string json = JsonUtility.ToJson(fieldData);
 
             //save light field JSON 
             File.WriteAllText(outputPath + "/" + sessionName + "/capture.json", json);
-
             Debug.Log("Saving session " + sessionName + " complete!");
             currentlyCapturing = false;
-
         }
 
 

@@ -48,12 +48,6 @@ namespace Simulation.Viewer
 
         private Thread _captureThread = null;
 
-        /// <summary>
-        /// The example is using threads on the call to MLCamera.CaptureRawImageAsync to alleviate the blocking
-        /// call at the beginning of CaptureRawImageAsync, and the safest way to prevent race conditions here is to
-        /// lock our access into the MLCamera class, so that we don't accidentally shut down the camera
-        /// while the thread is attempting to work
-        /// </summary>
         private object _cameraLockObject = new object();
 
         public List<CaptureView> captureViews;
@@ -92,8 +86,6 @@ namespace Simulation.Viewer
         }
 
 
-
-
         void Awake()
         {
             fileCounter = 0;
@@ -110,15 +102,13 @@ namespace Simulation.Viewer
         {
             DirectoryInfo dir = new DirectoryInfo(APP_ROOT_PATH);
             sessionCounter = dir.GetDirectories().Length + 1;
-            Debug.Log("sessionCounter !!!!!!!!!! " + sessionCounter);
         }
 
-        void Start()
-        {
-
-        }
-
-
+        /// <summary>
+        /// Helper for checking if editor object is set 
+        /// </summary>
+        /// <param name="obj">object to be set</param>
+        /// <param name="desc">description printed upon failing</param>
         void _CheckObjSet(UnityEngine.Object obj, string desc)
         {
             if (obj == null)
@@ -129,6 +119,9 @@ namespace Simulation.Viewer
             }
         }
 
+        /// <summary>
+        /// Checks if editor objects are set 
+        /// </summary>
         void CheckAllObjectsSet()
         {
             _CheckObjSet(controller, "controller");
@@ -147,12 +140,10 @@ namespace Simulation.Viewer
 
 
         /// <summary>
-        /// Stop the camera, unregister callbacks, and stop input and privileges APIs.
+        /// On disabling game object: Stop the camera, unregister callbacks, and stop input and privileges APIs.
         /// </summary>
         void OnDisable()
         {
-
-
             lock (_cameraLockObject)
             {
                 if (_isCameraConnected)
@@ -160,7 +151,6 @@ namespace Simulation.Viewer
 #if PLATFORM_LUMIN
                     MLCamera.OnRawImageAvailable -= OnCaptureRawImageComplete;
 #endif
-
                     _isCapturing = false;
                     DisableMLCamera();
                 }
@@ -201,8 +191,6 @@ namespace Simulation.Viewer
             Debug.Log(captureViews.Count + " captures taken");
         }
 
-
-
         /// <summary>
         /// Checks if the camera is captureAngle away from all current Captures before triggering capture thread 
         /// </summary>
@@ -210,7 +198,6 @@ namespace Simulation.Viewer
         {
 
             Vector3 camPos = Camera.main.transform.position;
-
             LinkedListNode<Vector3> currCapturePos = capturePositions.First;
 
             while (currCapturePos != null)
@@ -382,7 +369,7 @@ namespace Simulation.Viewer
                 // add to list of captures 
                 capturePositions.AddFirst(jsonData.transform.position);
                 captureViews.Add(new Simulation.CaptureView(imageFileName, texture, Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix, jsonData));
-                //TODO: DO SOMETHING WITH TEXTURE   
+
                 float SPHERE_RAD = 0.1f;
                 Vector3 camDir = Camera.main.transform.position - focalPoint.transform.position;
                 camDir.Normalize();

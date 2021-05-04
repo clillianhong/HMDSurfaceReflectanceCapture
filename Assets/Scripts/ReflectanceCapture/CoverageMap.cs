@@ -294,8 +294,6 @@ namespace CaptureSystem
             int[] tris = new int[(xSamples * ySamples * 2) * 3];
             int trisIdx = 0;
 
-
-            //TODO: clarify with #2 
             int sampleIdx = 0;
             int meshIdx = 0;
             Debug.Log("ySamples " + ySamples);

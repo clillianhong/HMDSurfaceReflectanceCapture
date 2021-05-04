@@ -353,7 +353,6 @@ namespace Simulation.Viewer
 #endif
 
             StartCaptureSession();
-            //TODO: call camera start capture to enable the camera and callbacks
 #if PLATFORM_LUMIN
             MLInput.OnControllerButtonDown += OnButtonDown;
 #endif

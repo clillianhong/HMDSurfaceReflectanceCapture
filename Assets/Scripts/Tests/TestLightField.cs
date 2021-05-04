@@ -67,7 +67,7 @@ namespace Simulation.Tests
             //don't actually load just check matrix 
             lfJson.captures = new CaptureJSONData[0];
 
-            LightField lightField = new LightField(lfJson, realRadius, realFocal);
+            // LightField lightField = new LightField(lfJson, realRadius, realFocal);
 
             // TestSRCapturePos(lightField.TransformSimToReal(c1), new Vector3(realFocal.x, realFocal.y, realRadius + realFocal.z), descr + " z axis");
             // TestSRCapturePos(lightField.TransformSimToReal(c2), new Vector3(realFocal.x, realRadius + realFocal.y, realFocal.z), descr + " y axis");
@@ -92,7 +92,7 @@ namespace Simulation.Tests
             //don't actually load just check matrix 
             lfJson.captures = new CaptureJSONData[0];
 
-            LightField lightField = new LightField(lfJson, realRadius, realFocal);
+            // LightField lightField = new LightField(lfJson, realRadius, realFocal);
 
             // TestSRCapturePos(lightField.TransformSimToReal(c1), new Vector3(realFocal.x + realDiagonal, realFocal.y + realDiagonal, realFocal.z + realDiagonal), descr);
 
