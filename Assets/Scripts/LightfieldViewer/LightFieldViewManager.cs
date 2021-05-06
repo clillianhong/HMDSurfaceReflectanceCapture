@@ -47,6 +47,8 @@ namespace Simulation.Viewer
 
         private GameObject[] captureViewObjs;
 
+        private Vector3 originalFocalPointPos;
+
         private int multiMode;
 
         private Camera _camera;
@@ -70,6 +72,7 @@ namespace Simulation.Viewer
             focalPoint = Instantiate(focalPointPrefab, focalPos, Quaternion.identity);
             _projectorPlane = Instantiate(projectorPlanePrefab, focalPos, _controller.Orientation);
             Debug.Log("Updating project plane invoking");
+            originalFocalPointPos = focalPoint.transform.position;
             InvokeRepeating("UpdateProjectorPlane", 2.0f, 0.3f);
         }
 
@@ -227,12 +230,12 @@ namespace Simulation.Viewer
                     capture.texture.wrapMode = TextureWrapMode.Clamp;
                     var captureCam = GameObject.Instantiate(projCameraPrefab, capture.realityCapturePosition, Quaternion.identity);
                     var camComponent = captureCam.GetComponent<Camera>();
-                    camComponent.transform.LookAt(focalPoint.transform.position);
+                    camComponent.transform.LookAt(originalFocalPointPos);
                     // Debug.Log("capture cam " + camComponent.worldToCameraMatrix);
                     // Debug.Log("real cam " + _camera.worldToCameraMatrix);
 
                     _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetTexture("_ProjTex" + (i + 1), capture.texture);
-                    _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetMatrix("projectM" + (i + 1), _camera.projectionMatrix * camComponent.worldToCameraMatrix);
+                    _projectorPlane.GetComponent<Renderer>().sharedMaterial.SetMatrix("projectM" + (i + 1), camComponent.projectionMatrix * camComponent.worldToCameraMatrix);
 
                     GameObject.Destroy(captureCam);
                 }

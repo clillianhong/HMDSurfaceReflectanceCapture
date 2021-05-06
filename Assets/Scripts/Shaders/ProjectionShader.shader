@@ -64,7 +64,7 @@ Shader "Custom/ProjectionShader"
             if (i.uv.w > 0.0 ){
                
 
-                if (multiMode==1){ //render 3 nearest neighbors at 1/3 opacity 
+                // if (multiMode==1){ //render 3 nearest neighbors at 1/3 opacity 
                     float2 proj1 = i.uv1.xy / i.uv1.w;
                     proj1 = (proj1 + 1) / 2; 
                     float4 tex1 = tex2D(_ProjTex1, proj1); 
@@ -78,11 +78,13 @@ Shader "Custom/ProjectionShader"
                     float4 tex3 = tex2D(_ProjTex3, proj3); 
                     tex3.w = 0.3; 
                     texcol = tex1 + tex2 + tex3;
-                }else{ //render the nearest neighbor 
-                    float2 proj = i.uv.xy / i.uv.w;
-                    proj = (proj + 1) / 2; 
-                    texcol = tex2D(_ProjTex1, proj); 
-                }
+                // }
+                
+                // else{ //render the nearest neighbor 
+                //     float2 proj = i.uv.xy / i.uv.w;
+                //     proj = (proj + 1) / 2; 
+                //     texcol = tex2D(_ProjTex1, proj); 
+                // }
                
             } 
             if (i.uv.w < 0)
